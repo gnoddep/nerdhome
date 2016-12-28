@@ -49,6 +49,9 @@ UKP meter.
 
 Changelog:
 
+1.3 - Make it work with the current Adafruit_GPIO library - Peter Gnodde
+    Use Adafruit_GPIO.I2C
+    Removed logging statements
 1.2 - Additional clean-up - Chris Satterlee
     Added underscore back into class name
     Removed unnecessary inheritance from Adafruit_I2C
@@ -78,16 +81,10 @@ Changelog:
        from 16x to 1x does not work
 """
 
-from __future__ import print_function
 import logging
-import sys
 import time
-from Adafruit_I2C import Adafruit_I2C
 
-# Logging needs to be set at top after imports
-# logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
-class Adafruit_TSL2561(object):
+class TSL2561(object):
     TSL2561_VISIBLE           = 2       # channel 0 - channel 1
     TSL2561_INFRARED          = 1       # channel 1
     TSL2561_FULLSPECTRUM      = 0       # channel 0
@@ -207,64 +204,28 @@ class Adafruit_TSL2561(object):
 
     TSL2561_NO_OF_AVG_SAMPLES         = 25      # How many samples to make an average reading
 
-    def write8(self, reg, value):
-        """
-        Writes a register and an 8 bit value over I2C
-
-        :param reg: Register / Address to write value to
-        :param value: Byte to write to Address
-        """
-        logging.debug('write8')
-        self._i2c.write8(reg, value)
-        logging.debug('write8_end')
-
-    def read8(self, reg):
-        """
-        Reads an 8 bit value over I2C
-
-        :param reg: Register / Address to read value from
-        :return: Unsigned byte
-        """
-        logging.debug('read8')
-        return self._i2c.readU8(reg)
-
-    def read16(self, reg):
-        """
-        Reads a 16 bit values over I2C
-
-        :param reg: Register / Address to read value from
-        :return: Unsigned word
-        """
-        logging.debug('read16')
-        return self._i2c.readU16(reg)
-
     def enable(self):
         """
         Enables the device
         """
-        logging.debug('enable')
         # Enable the device by setting the control bit to 0x03
-        self._i2c.write8(self.TSL2561_COMMAND_BIT |
+        self._device.write8(self.TSL2561_COMMAND_BIT |
                          self.TSL2561_REGISTER_CONTROL,
                          self.TSL2561_CONTROL_POWERON)
-        logging.debug('enable_end')
 
     def disable(self):
         """
         Disables the device (putting it in lower power sleep mode)
         """
-        logging.debug('disable')
         # Turn the device off to save power
-        self._i2c.write8(self.TSL2561_COMMAND_BIT |
+        self._device.write8(self.TSL2561_COMMAND_BIT |
                          self.TSL2561_REGISTER_CONTROL,
                          self.TSL2561_CONTROL_POWEROFF)
-        logging.debug('disable_end')
 
     def get_data(self):
         """
         Private function to read luminosity on both channels
         """
-        logging.debug('get_data')
 
         # Enables the device by setting the control bit to 0x03
         self.enable()
@@ -279,39 +240,39 @@ class Adafruit_TSL2561(object):
 
         # Reads a two byte value from channel 0 (visible + infrared)
         # noinspection PyPep8
-        self._broadband = self.read16(self.TSL2561_COMMAND_BIT |
+        self._broadband = self._device.readU16(self.TSL2561_COMMAND_BIT |
                                       self.TSL2561_WORD_BIT |
                                       self.TSL2561_REGISTER_CHAN0_LOW)
 
         # Reads a two byte value from channel 1 (infrared)
-        self._ir = self.read16(self.TSL2561_COMMAND_BIT |
+        self._ir = self._device.readU16(self.TSL2561_COMMAND_BIT |
                                self.TSL2561_WORD_BIT |
                                self.TSL2561_REGISTER_CHAN1_LOW)
 
         # Turn the device off to save power
         self.disable()
-        logging.debug('getData_end"')
 
     # noinspection PyMissingConstructor
-    def __init__(self, address=TSL2561_ADDR_FLOAT, debug=False):
+    def __init__(self, address=TSL2561_ADDR_FLOAT, i2c=None, **kwargs):
         """
         Constructor
 
         :param address: I2C address of TSL2561, defaults to 0x39
-        :param debug: Turn on debugging, defaults to False
         """
-        self._debug = debug
-        logging.debug('__init__"')
-        self._address = address
+        self._logger = logging.getLogger('Adafruit_TSL2561.TSL2561')
+        
+        if i2c is None:
+            import Adafruit_GPIO.I2C as I2C
+            i2c = I2C
+        self._device = i2c.get_i2c_device(address, **kwargs)
+
         self._tsl2561Initialised = False
         self._tsl2561AutoGain = False
         self._tsl2561IntegrationTime = self.TSL2561_INTEGRATIONTIME_13MS
         self._tsl2561Gain = self.TSL2561_GAIN_1X
-        self._i2c = Adafruit_I2C(self._address)
         self._luminosity = 0
         self._broadband = 0
         self._ir = 0
-        logging.debug('__init___end')
 
     def begin(self):
         """
@@ -322,9 +283,8 @@ class Adafruit_TSL2561(object):
 
         :return: True if connected to a TSL2561
         """
-        logging.debug('begin')
         # Make sure we're actually connected
-        x = self.read8(self.TSL2561_REGISTER_ID)
+        x = self._device.readU8(self.TSL2561_REGISTER_ID)
         if not(x & 0x0A):
             return False
         self._tsl2561Initialised = True
@@ -335,7 +295,6 @@ class Adafruit_TSL2561(object):
 
         # Note: by default, the device is in power down mode on bootup
         self.disable()
-        logging.debug('begin_end')
 
         return True
 
@@ -346,12 +305,10 @@ class Adafruit_TSL2561(object):
 
         :param enable: True to enable
         """
-        logging.debug('enable_auto_gain')
         if enable:
             self._tsl2561AutoGain = enable
         else:
             self._tsl2561AutoGain = False
-        logging.debug('enableAutoGain_end')
 
     def set_integration_time(self, integration_time):
         """
@@ -360,7 +317,6 @@ class Adafruit_TSL2561(object):
         :param integration_time:
         :return:
         """
-        logging.debug('set_integration_time')
         if not self._tsl2561Initialised:
             self.begin()
 
@@ -368,7 +324,7 @@ class Adafruit_TSL2561(object):
         self.enable()
 
         # Update the timing register
-        self.write8(self.TSL2561_COMMAND_BIT |
+        self._device.write8(self.TSL2561_COMMAND_BIT |
                     self.TSL2561_REGISTER_TIMING, integration_time |
                     self._tsl2561Gain)
 
@@ -377,7 +333,6 @@ class Adafruit_TSL2561(object):
 
         # Turn the device off to save power
         self.disable()
-        logging.debug('setIntegrationTime_end')
 
     def set_gain(self, gain):
         """
@@ -385,7 +340,6 @@ class Adafruit_TSL2561(object):
 
         :param gain:
         """
-        logging.debug('set_gain')
         if not self._tsl2561Initialised:
             self.begin()
 
@@ -393,7 +347,7 @@ class Adafruit_TSL2561(object):
         self.enable()
 
         # Update the timing register
-        self.write8(self.TSL2561_COMMAND_BIT |
+        self._device.write8(self.TSL2561_COMMAND_BIT |
                     self.TSL2561_REGISTER_TIMING,
                     self._tsl2561IntegrationTime | gain)
 
@@ -402,7 +356,6 @@ class Adafruit_TSL2561(object):
 
         # Turn the device off to save power
         self.disable()
-        logging.debug('setGain_end')
 
     def get_luminosity(self):
         """
@@ -411,7 +364,6 @@ class Adafruit_TSL2561(object):
 
         """
 
-        logging.debug('get_luminosity')
         valid = False
 
         if not self._tsl2561Initialised:
@@ -468,7 +420,6 @@ class Adafruit_TSL2561(object):
                 # results.  This avoids endless loops where a value is at one
                 # extreme pre-gain, and the the other extreme post-gain
                 valid = True
-        logging.debug('getLuminosity_end')
 
     def calculate_lux(self):
         """
@@ -479,7 +430,6 @@ class Adafruit_TSL2561(object):
         :raises: OverflowError when TSL2561 sensor is saturated
 
         """
-        logging.debug('calculate_lux')
         self.get_luminosity()
         # Make sure the sensor isn't saturated!
         if self._tsl2561IntegrationTime == self.TSL2561_INTEGRATIONTIME_13MS:
@@ -587,7 +537,6 @@ class Adafruit_TSL2561(object):
         lux = temp >> self.TSL2561_LUX_LUXSCALE
 
         # Signal I2C had no errors
-        logging.debug('calculateLux_end')
         return lux
 
     def calculate_avg_lux(self, testavg=TSL2561_NO_OF_AVG_SAMPLES):
@@ -611,22 +560,3 @@ class Adafruit_TSL2561(object):
                 luxavg = round(luxavgtotal / testavg)
                 return luxavg
 
-if __name__ == "__main__":
-    LightSensor = Adafruit_TSL2561()
-    LightSensor.enable_auto_gain(True)
-
-    # See if "loop" has been passed as an arg.
-    try:
-        arg = sys.argv[1]
-        if arg == "loop":
-            while True:
-                try:
-                    print(int(LightSensor.calculate_avg_lux()))
-                except OverflowError as e:
-                    print(e)
-                except KeyboardInterrupt:
-                    quit()
-        else:
-            print("Invalid arg(s):", sys.argv[1])
-    except IndexError:
-        print(int(LightSensor.calculate_avg_lux()))
