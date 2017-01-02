@@ -26,9 +26,11 @@ from Adafruit_LED_Backpack import SevenSegment
 import Adafruit_TSL2561.TSL2561 as TSL2561
 
 import Nerdman.Temperature as Temperature
+import Nerdman.Lux as Lux
 
 segment = None
 temperature = None
+lux = None
 
 RED_led = 23
 RED_button = 24
@@ -49,6 +51,7 @@ button_led_map = {
 def main():
     global segment
     global temperature
+    global lux
 
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -67,10 +70,10 @@ def main():
     segment.set_brightness(0x00)
 
     temperature = Temperature.Temperature()
-    temperature.start()
+    lux = Lux.Lux()
 
-    lux_sensor = TSL2561.TSL2561() # Default on 0x39
-    lux_sensor.begin()
+    temperature.start()
+    lux.start()
 
     print "Press CTRL+C to exit"
 
@@ -114,23 +117,23 @@ def main():
             segment.set_digit_raw(3, 0x01 | 0x20 | 0x40)
             segment.set_fixed_decimal(True)
         elif toggle == 2:
-            lux = int(lux_sensor.calculate_avg_lux())
-            if lux >= 10000:
+            lx = int(lux.get_lux())
+            if lx >= 10000:
                 segment.set_digit(0, '-')
                 segment.set_digit(1, '-')
                 segment.set_digit(2, '-')
                 segment.set_digit(3, '-')
             else:
-                segment.set_digit(3, lux % 10)
+                segment.set_digit(3, lx % 10)
 
-                if lux >= 10:
-                    segment.set_digit(2, int(lux / 10) % 10)
+                if lx >= 10:
+                    segment.set_digit(2, int(lx / 10) % 10)
 
-                    if lux >= 100:
-                        segment.set_digit(1, int(lux / 100) % 10)
+                    if lx >= 100:
+                        segment.set_digit(1, int(lx / 100) % 10)
 
-                        if lux >= 1000:
-                            segment.set_digit(0, int(lux / 1000) % 10)
+                        if lx >= 1000:
+                            segment.set_digit(0, int(lx / 1000) % 10)
 
 
         # Write the display buffer to the hardware.  This must be called to
@@ -143,11 +146,13 @@ def main():
 def signal_handler(signal, frame):
     global segment
     global temperature
+    global lux
 
     if not segment is None:
         segment.clear()
         segment.write_display()
 
+    lux.stop()
     temperature.stop()
 
     GPIO.output(RED_led, 0)
