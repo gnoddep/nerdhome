@@ -15,10 +15,9 @@
 # bit 6 (0x20) - top left vertical
 # bit 7 (0x40) - middle vertical
 
-import signal
 import sys
-import time
 import datetime
+import threading
 
 import RPi.GPIO as GPIO
 
@@ -27,10 +26,6 @@ import Adafruit_TSL2561.TSL2561 as TSL2561
 
 import Nerdman.Temperature as Temperature
 import Nerdman.Lux as Lux
-
-segment = None
-temperature = None
-lux = None
 
 RED_led = 23
 RED_button = 24
@@ -49,18 +44,12 @@ button_led_map = {
     }
 
 def main():
-    global segment
-    global temperature
-    global lux
-
-    signal.signal(signal.SIGINT, signal_handler)
-
     GPIO.setmode(GPIO.BOARD)
 
     for button, led in button_led_map.iteritems():
         GPIO.setup(led['led'], GPIO.OUT)
         GPIO.output(led['led'], led['status'])
-    
+
         GPIO.setup(button, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
         GPIO.add_event_detect(button, GPIO.BOTH, callback=handle_button_action)
 
@@ -75,90 +64,86 @@ def main():
     temperature.start()
     lux.start()
 
-    print "Press CTRL+C to exit"
+    try:
+        print "Press CTRL+C to exit"
 
-    toggle = 0
-    can_toggle = 1
+        toggle = 0
+        can_toggle = 1
 
-    n = 0
+        running = threading.Event()
+        while not running.wait(0.25):
+            segment.clear()
 
-    # Continually update the time on a 4 char, 7-segment display
-    while (True):
-        now = datetime.datetime.now()
-        hour = now.hour
-        minute = now.minute
-        second = now.second
+            now = datetime.datetime.now()
 
-        if can_toggle == 1 and second % 5 == 0:
-            toggle = (toggle + 1) % 3
-            can_toggle = 0
-        elif can_toggle == 0 and second % 5 != 0:
-            can_toggle = 1
+            if can_toggle == 1 and now.second % 5 == 0:
+                toggle = (toggle + 1) % 3
+                can_toggle = 0
+            elif can_toggle == 0 and now.second % 5 != 0:
+                can_toggle = 1
 
-        segment.clear()
+            if toggle == 0:
+                display_time(now, segment)
+            elif toggle == 1:
+                display_temperature(int(temperature.get_temperature()), segment)
+            elif toggle == 2:
+                display_lux(int(lux.get_lux()), segment)
 
-        if toggle == 0:
-            # Set hours
-            segment.set_digit(0, int(hour / 10))     # Tens
-            segment.set_digit(1, hour % 10)          # Ones
-            # Set minutes
-            segment.set_digit(2, int(minute / 10))   # Tens
-            segment.set_digit(3, minute % 10)        # Ones
-            # Toggle colon
-            segment.set_colon(second % 2)              # Toggle colon at 1Hz
-        elif toggle == 1:
-            temp = temperature.get_temperature()
-            if not temp is None:
-                segment.set_digit(1, int(temp / 10))
-                segment.set_digit(2, int(temp % 10))
-            else:
-                segment.set_digit(1, '-')
-                segment.set_digit(2, '-')
-            segment.set_digit_raw(3, 0x01 | 0x20 | 0x40)
-            segment.set_fixed_decimal(True)
-        elif toggle == 2:
-            lx = int(lux.get_lux())
-            if lx >= 10000:
-                segment.set_digit(0, '-')
-                segment.set_digit(1, '-')
-                segment.set_digit(2, '-')
-                segment.set_digit(3, '-')
-            else:
-                segment.set_digit(3, lx % 10)
+            segment.write_display()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if not segment is None:
+            segment.clear()
+            segment.write_display()
 
-                if lx >= 10:
-                    segment.set_digit(2, int(lx / 10) % 10)
+        lux.stop()
+        temperature.stop()
 
-                    if lx >= 100:
-                        segment.set_digit(1, int(lx / 100) % 10)
-
-                        if lx >= 1000:
-                            segment.set_digit(0, int(lx / 1000) % 10)
-
-
-        # Write the display buffer to the hardware.  This must be called to
-        # update the actual display LEDs.
-        segment.write_display()
-
-        # Wait a quarter second (less than 1 second to prevent colon blinking getting$
-        time.sleep(0.25)
-
-def signal_handler(signal, frame):
-    global segment
-    global temperature
-    global lux
-
-    if not segment is None:
-        segment.clear()
-        segment.write_display()
-
-    lux.stop()
-    temperature.stop()
-
-    GPIO.output(RED_led, 0)
-    GPIO.cleanup()
+        GPIO.output(RED_led, 0)
+        GPIO.cleanup()
 
     sys.exit(0)
+
+def display_time(time, segment):
+    # Set hours
+    segment.set_digit(0, int(time.hour / 10))     # Tens
+    segment.set_digit(1, time.hour % 10)          # Ones
+    # Set minutes
+    segment.set_digit(2, int(time.minute / 10))   # Tens
+    segment.set_digit(3, time.minute % 10)        # Ones
+    # Toggle colon
+    segment.set_colon(time.second & 1)            # Toggle colon at 1Hz
+
+def display_temperature(temperature, segment):
+    if temperature is None:
+        segment.set_digit(1, '-')
+        segment.set_digit(2, '-')
+    else:
+        segment.set_digit(2, temperature % 10)
+        if temperature >= 10:
+            segment.set_digit(1, int(temperature / 10) % 10)
+
+    segment.set_digit_raw(3, 0x01 | 0x20 | 0x40)
+    segment.set_fixed_decimal(True)
+
+def display_lux(lux, segment):
+    if lux is None or lux >= 10000:
+        segment.set_digit(0, '-')
+        segment.set_digit(1, '-')
+        segment.set_digit(2, '-')
+        segment.set_digit(3, '-')
+    else:
+        segment.set_digit(3, lux % 10)
+
+        if lux >= 10:
+            segment.set_digit(2, int(lux / 10) % 10)
+
+            if lux >= 100:
+                segment.set_digit(1, int(lux / 100) % 10)
+
+                if lux >= 1000:
+                    segment.set_digit(0, int(lux / 1000) % 10)
 
 def handle_button_action(button):
     global button_led_map
