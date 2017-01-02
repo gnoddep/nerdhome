@@ -23,11 +23,12 @@ import datetime
 import RPi.GPIO as GPIO
 
 from Adafruit_LED_Backpack import SevenSegment
-import Adafruit_MCP9808.MCP9808 as MCP9808
 import Adafruit_TSL2561.TSL2561 as TSL2561
 
+import Nerdman.Temperature as Temperature
+
 segment = None
-temp_sensor = None
+temperature = None
 
 RED_led = 23
 RED_button = 24
@@ -47,7 +48,7 @@ button_led_map = {
 
 def main():
     global segment
-    global temp_sensor
+    global temperature
 
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -65,8 +66,8 @@ def main():
     segment.begin()
     segment.set_brightness(0x00)
 
-    temp_sensor = MCP9808.MCP9808() # Default on 0x18
-    temp_sensor.begin()
+    temperature = Temperature.Temperature()
+    temperature.start()
 
     lux_sensor = TSL2561.TSL2561() # Default on 0x39
     lux_sensor.begin()
@@ -103,9 +104,13 @@ def main():
             # Toggle colon
             segment.set_colon(second % 2)              # Toggle colon at 1Hz
         elif toggle == 1:
-            temp = temp_sensor.readTempC()
-            segment.set_digit(1, int(temp / 10))
-            segment.set_digit(2, int(temp % 10))
+            temp = temperature.get_temperature()
+            if not temp is None:
+                segment.set_digit(1, int(temp / 10))
+                segment.set_digit(2, int(temp % 10))
+            else:
+                segment.set_digit(1, '-')
+                segment.set_digit(2, '-')
             segment.set_digit_raw(3, 0x01 | 0x20 | 0x40)
             segment.set_fixed_decimal(True)
         elif toggle == 2:
@@ -116,18 +121,17 @@ def main():
                 segment.set_digit(2, '-')
                 segment.set_digit(3, '-')
             else:
-                if lux >= 1000:
-                    segment.set_digit(0, int(lux / 1000))
-                    lux -= int(lux / 1000) * 1000
-
-                if lux >= 100:
-                    segment.set_digit(1, int(lux / 100))
-                    lux -= int(lux / 100) * 100
+                segment.set_digit(3, lux % 10)
 
                 if lux >= 10:
-                    segment.set_digit(2, int(lux / 10))
+                    segment.set_digit(2, int(lux / 10) % 10)
 
-                segment.set_digit(3, lux % 10)
+                    if lux >= 100:
+                        segment.set_digit(1, int(lux / 100) % 10)
+
+                        if lux >= 1000:
+                            segment.set_digit(0, int(lux / 1000) % 10)
+
 
         # Write the display buffer to the hardware.  This must be called to
         # update the actual display LEDs.
@@ -138,9 +142,13 @@ def main():
 
 def signal_handler(signal, frame):
     global segment
+    global temperature
+
     if not segment is None:
         segment.clear()
         segment.write_display()
+
+    temperature.stop()
 
     GPIO.output(RED_led, 0)
     GPIO.cleanup()
