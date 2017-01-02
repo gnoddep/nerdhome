@@ -539,24 +539,17 @@ class TSL2561(object):
         # Signal I2C had no errors
         return lux
 
-    def calculate_avg_lux(self, testavg=TSL2561_NO_OF_AVG_SAMPLES):
+    def calculate_avg_lux(self, number_of_samples=TSL2561_NO_OF_AVG_SAMPLES):
         """
         Calculates an averaged Lux value, useful for flickering lights and for
         smoothing values due to noise
 
-        :param testavg: Number of samples to take in a reading, defaults to 25
+        :param number_of_samples: Number of samples to take in a reading, defaults to 25
         :return: lux value, unsigned 16bit word (0 - 65535)
         """
-        # Set initial vars
-        count = 0
-        luxavgtotal = 0
-        # Create a cumulative total of values for 'testavg' tests
-        while True:
-            capture = self.calculate_lux()
-            luxavgtotal += capture
-            count += 1
-            # Once we reach the number of required tests, work out the average
-            if count >= testavg:
-                luxavg = round(luxavgtotal / testavg)
-                return luxavg
+        total = 0
+        for i in xrange(number_of_samples):
+            total += self.calculate_lux()
+        else:
+            return round(total / number_of_samples)
 
