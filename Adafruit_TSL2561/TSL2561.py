@@ -469,7 +469,7 @@ class TSL2561(object):
             ratio1 = (channel1 << (self.TSL2561_LUX_RATIOSCALE + 1)) / channel0
 
         # round the ratio value
-        ratio = (ratio1 + 1) >> 1
+        ratio = int(ratio1 + 1) >> 1
 
         if self.TSL2561_PACKAGE_CS == 1:
             if (ratio >= 0) and (ratio <= self.TSL2561_LUX_K1C):
@@ -548,7 +548,7 @@ class TSL2561(object):
         :return: lux value, unsigned 16bit word (0 - 65535)
         """
         total = 0
-        for i in xrange(number_of_samples):
+        for i in range(number_of_samples):
             total += self.calculate_lux()
         else:
             return round(total / number_of_samples)
