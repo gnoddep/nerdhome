@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # i2c addresses
 # 7 segment display     0x70
 # Temperature sensor    0x18
