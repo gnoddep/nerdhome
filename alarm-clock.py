@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 # i2c addresses
 # 7 segment display     0x70
@@ -46,7 +46,7 @@ button_led_map = {
 def main():
     GPIO.setmode(GPIO.BOARD)
 
-    for button, led in button_led_map.iteritems():
+    for button, led in button_led_map.items():
         GPIO.setup(led['led'], GPIO.OUT)
         GPIO.output(led['led'], led['status'])
 
@@ -65,7 +65,7 @@ def main():
     lux.start()
 
     try:
-        print "Press CTRL+C to exit"
+        print("Press CTRL+C to exit")
 
         toggle = 0
         can_toggle = 1
