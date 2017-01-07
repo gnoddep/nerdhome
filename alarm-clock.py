@@ -4,28 +4,17 @@
 # RTC                   0x68
 # Lux sensor            0x39
 
-# Bitmap for the 7-segment digits
-# bit 1 (0x01) - top horizontal
-# bit 2 (0x02) - top right vertical
-# bit 3 (0x04) - bottom right vertical
-# bit 4 (0x08) - bottom horizontal
-# bit 5 (0x10) - bottom left vertical
-# bit 6 (0x20) - top left vertical
-# bit 7 (0x40) - middle vertical
-
-import sys
 from datetime import datetime
-import time
+import fileinput
+import signal
 import threading
 
 import RPi.GPIO as GPIO
 
-from Adafruit_LED_Backpack import SevenSegment
-import Adafruit_TSL2561.TSL2561 as TSL2561
-
 import Nerdman.Temperature as Temperature
 import Nerdman.Lux as Lux
 import Nerdman.RealTimeClock as RealTimeClock
+import Nerdman.Display as Display
 
 RTC_INTERRUPT = 26
 RED_led = 23
@@ -44,7 +33,17 @@ button_led_map = {
         BLUE_button: {'led': BLUE_led, 'status': 0},
     }
 
+temperature = None
+lux = None
+display = None
+wait_mutex = threading.Event()
+
 def main():
+    global display
+    global temperature
+    global lux
+    global wait_mutex
+
     GPIO.setmode(GPIO.BOARD)
 
     GPIO.setup(RTC_INTERRUPT, GPIO.IN)
@@ -57,102 +56,74 @@ def main():
         GPIO.setup(button, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
         GPIO.add_event_detect(button, GPIO.BOTH, callback=handle_button_action)
 
-    rtc = RealTimeClock.RealTimeClock()
-    rtc.enable_interrupt()
-
-    # Initialize the display. Must be called once before using the display.
-    segment = SevenSegment.SevenSegment(address = 0x70)
-    segment.begin()
-    segment.set_brightness(0x00)
-
     temperature = Temperature.Temperature()
     lux = Lux.Lux()
+    display = Display.Display(display_time)
 
     temperature.start()
     lux.start()
+    display.start()
+
+    rtc = RealTimeClock.RealTimeClock()
+    rtc.enable_interrupt()
 
     try:
         print("Press CTRL+C to exit")
-
-        toggle = 0
-        can_toggle = 1
-
-        running = threading.Event()
-        while not running.wait(0.25):
-            segment.clear()
-
-            now = datetime.now()
-
-            if can_toggle == 1 and now.second % 5 == 0:
-                toggle = (toggle + 1) % 3
-                can_toggle = 0
-            elif can_toggle == 0 and now.second % 5 != 0:
-                can_toggle = 1
-
-            if toggle == 0:
-                display_time(now, segment)
-            elif toggle == 1:
-                display_temperature(int(temperature.get_temperature()), segment)
-            elif toggle == 2:
-                display_lux(int(lux.get_lux()), segment)
-
-            segment.write_display()
+        while not wait_mutex.wait():
+            pass
+        return
     except KeyboardInterrupt:
         pass
     finally:
-        if not segment is None:
-            segment.clear()
-            segment.write_display()
+        display.set_display_function(None)
+        rtc.disable_interrupt()
 
+        display.stop()
         lux.stop()
         temperature.stop()
 
-        rtc.disable_interrupt()
+        for button, led in button_led_map.items():
+            GPIO.output(led['led'], 0)
 
-        GPIO.output(RED_led, 0)
         GPIO.cleanup()
 
     sys.exit(0)
 
-def display_time(time, segment):
-    # Set hours
-    segment.set_digit(0, int(time.hour / 10))     # Tens
-    segment.set_digit(1, time.hour % 10)          # Ones
-    # Set minutes
-    segment.set_digit(2, int(time.minute / 10))   # Tens
-    segment.set_digit(3, time.minute % 10)        # Ones
-    # Toggle colon
-    segment.set_colon(time.second & 1)            # Toggle colon at 1Hz
+ticks = 0
+state = 0
+def handle_rtc_interrupt(gpio):
+    global display
+    global temperature
+    global lux
+    global ticks
+    global state
 
-def display_temperature(temperature, segment):
-    if temperature is None:
-        segment.set_digit(1, '-')
-        segment.set_digit(2, '-')
-    else:
-        segment.set_digit(2, temperature % 10)
-        if temperature >= 10:
-            segment.set_digit(1, int(temperature / 10) % 10)
+    ticks += 1
 
-    segment.set_digit_raw(3, 0x01 | 0x20 | 0x40)
-    segment.set_fixed_decimal(True)
+    if ticks % 5 == 0:
+        state += 1
+        state %= 3
 
-def display_lux(lux, segment):
-    if lux is None or lux >= 10000:
-        segment.set_digit(0, '-')
-        segment.set_digit(1, '-')
-        segment.set_digit(2, '-')
-        segment.set_digit(3, '-')
-    else:
-        segment.set_digit(3, lux % 10)
+        if state == 1:
+            display.set_display_function(temperature.display)
+        elif state == 2:
+            display.set_display_function(lux.display)
+        else:
+            display.set_display_function(display_time)
 
-        if lux >= 10:
-            segment.set_digit(2, int(lux / 10) % 10)
+    if not display is None:
+        display.update()
 
-            if lux >= 100:
-                segment.set_digit(1, int(lux / 100) % 10)
+def display_time(display):
+    now = datetime.now()
 
-                if lux >= 1000:
-                    segment.set_digit(0, int(lux / 1000) % 10)
+    display.set_digit(0, int(now.hour / 10))
+    display.set_digit(1, now.hour % 10)
+
+    display.set_digit(2, int(now.minute / 10))
+    display.set_digit(3, now.minute % 10)
+
+    display.set_colon(now.second & 1)
 
 def handle_button_action(button):
     global button_led_map
@@ -162,9 +133,11 @@ def handle_button_action(button):
         button_led_map[button]['status'] = gpio
         GPIO.output(button_led_map[button]['led'], button_led_map[button]['status'])
 
-def handle_rtc_interrupt(gpio):
-    print('WOEP WOEP: {0}.{1}'.format(int(time.time()), datetime.now().microsecond))
+def signal_handler(signal, frame):
+    global wait_mutex
+    wait_mutex.set()
 
 if __name__ == '__main__':
+    signal.signal(signal.SIGINT, signal_handler)
     main()
 

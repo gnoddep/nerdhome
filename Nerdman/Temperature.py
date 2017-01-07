@@ -41,3 +41,18 @@ class Temperature(threading.Thread):
         temperature = self.sensor.readTempC()
         with self.log_mutex:
             self.log.append(temperature)
+
+    def display(self, display):
+        temperature = int(self.get_temperature())
+
+        if temperature is None:
+            display.set_digit(1, '-')
+            display.set_digit(2, '-')
+        else:
+            display.set_digit(2, temperature % 10)
+            if temperature >= 10:
+                display.set_digit(1, int(temperature / 10) % 10)
+
+        display.set_digit_raw(3, 0x01 | 0x20 | 0x40)
+        display.set_fixed_decimal(True)
+

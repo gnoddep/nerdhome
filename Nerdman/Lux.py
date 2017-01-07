@@ -43,3 +43,24 @@ class Lux(threading.Thread):
         with self.log_mutex:
             self.log.append(lux)
 
+    def display(self, display):
+        lux = self.get_lux()
+
+        if lux is None or lux >= 10000:
+            display.set_digit(0, '-')
+            display.set_digit(1, '-')
+            display.set_digit(2, '-')
+            display.set_digit(3, '-')
+        else:
+            lux = int(lux)
+            display.set_digit(3, lux % 10)
+
+            if lux >= 10:
+                display.set_digit(2, int(lux / 10) % 10)
+
+                if lux >= 100:
+                    display.set_digit(1, int(lux / 100) % 10)
+
+                    if lux >= 1000:
+                        display.set_digit(0, int(lux / 1000) % 10)
+
