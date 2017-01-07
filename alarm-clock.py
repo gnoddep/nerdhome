@@ -14,7 +14,8 @@
 # bit 7 (0x40) - middle vertical
 
 import sys
-import datetime
+from datetime import datetime
+import time
 import threading
 
 import RPi.GPIO as GPIO
@@ -24,7 +25,9 @@ import Adafruit_TSL2561.TSL2561 as TSL2561
 
 import Nerdman.Temperature as Temperature
 import Nerdman.Lux as Lux
+import Nerdman.RealTimeClock as RealTimeClock
 
+RTC_INTERRUPT = 26
 RED_led = 23
 RED_button = 24
 GREEN_led = 21
@@ -44,12 +47,18 @@ button_led_map = {
 def main():
     GPIO.setmode(GPIO.BOARD)
 
+    GPIO.setup(RTC_INTERRUPT, GPIO.IN)
+    GPIO.add_event_detect(RTC_INTERRUPT, GPIO.FALLING, callback=handle_rtc_interrupt)
+
     for button, led in button_led_map.items():
         GPIO.setup(led['led'], GPIO.OUT)
         GPIO.output(led['led'], led['status'])
 
         GPIO.setup(button, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
         GPIO.add_event_detect(button, GPIO.BOTH, callback=handle_button_action)
+
+    rtc = RealTimeClock.RealTimeClock()
+    rtc.enable_interrupt()
 
     # Initialize the display. Must be called once before using the display.
     segment = SevenSegment.SevenSegment(address = 0x70)
@@ -72,7 +81,7 @@ def main():
         while not running.wait(0.25):
             segment.clear()
 
-            now = datetime.datetime.now()
+            now = datetime.now()
 
             if can_toggle == 1 and now.second % 5 == 0:
                 toggle = (toggle + 1) % 3
@@ -97,6 +106,8 @@ def main():
 
         lux.stop()
         temperature.stop()
+
+        rtc.disable_interrupt()
 
         GPIO.output(RED_led, 0)
         GPIO.cleanup()
@@ -150,6 +161,9 @@ def handle_button_action(button):
     if gpio != button_led_map[button]['status']:
         button_led_map[button]['status'] = gpio
         GPIO.output(button_led_map[button]['led'], button_led_map[button]['status'])
+
+def handle_rtc_interrupt(gpio):
+    print('WOEP WOEP: {0}.{1}'.format(int(time.time()), datetime.now().microsecond))
 
 if __name__ == '__main__':
     main()
