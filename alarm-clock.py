@@ -15,6 +15,8 @@ import Nerdman.Temperature as Temperature
 import Nerdman.Lux as Lux
 import Nerdman.RealTimeClock as RealTimeClock
 import Nerdman.Display as Display
+import Nerdman.LedButton as LedButton
+from Nerdman.Button import Button
 
 RTC_INTERRUPT = 26
 RED_led = 23
@@ -26,16 +28,11 @@ ORANGE_button = 18
 BLUE_led = 15
 BLUE_button = 16
 
-button_led_map = {
-        RED_button: {'led': RED_led, 'status': 0},
-        GREEN_button: {'led': GREEN_led, 'status': 0},
-        ORANGE_button: {'led': ORANGE_led, 'status' : 0},
-        BLUE_button: {'led': BLUE_led, 'status': 0},
-    }
-
 temperature = None
 lux = None
 display = None
+led_buttons = []
+
 wait_mutex = threading.Event()
 
 def main():
@@ -43,18 +40,23 @@ def main():
     global temperature
     global lux
     global wait_mutex
+    global led_buttons
 
     GPIO.setmode(GPIO.BOARD)
 
     GPIO.setup(RTC_INTERRUPT, GPIO.IN)
     GPIO.add_event_detect(RTC_INTERRUPT, GPIO.FALLING, callback=handle_rtc_interrupt)
 
-    for button, led in button_led_map.items():
-        GPIO.setup(led['led'], GPIO.OUT)
-        GPIO.output(led['led'], led['status'])
+    led_buttons = [
+        LedButton.LedButton(RED_button, RED_led),
+        LedButton.LedButton(GREEN_button, GREEN_led),
+        LedButton.LedButton(ORANGE_button, ORANGE_led),
+        LedButton.LedButton(BLUE_button, BLUE_led),
+    ]
 
-        GPIO.setup(button, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-        GPIO.add_event_detect(button, GPIO.BOTH, callback=handle_button_action)
+    for button in led_buttons:
+        button.set_callback(Button.PRESSED, handle_button_action)
+        button.set_callback(Button.RELEASED, handle_button_action)
 
     temperature = Temperature.Temperature()
     lux = Lux.Lux()
@@ -82,8 +84,8 @@ def main():
         lux.stop()
         temperature.stop()
 
-        for button, led in button_led_map.items():
-            GPIO.output(led['led'], 0)
+        for led in led_buttons:
+            led.off()
 
         GPIO.cleanup()
 
@@ -126,12 +128,8 @@ def display_time(display):
     display.set_colon(now.second & 1)
 
 def handle_button_action(button):
-    global button_led_map
-
-    gpio = GPIO.input(button)
-    if gpio != button_led_map[button]['status']:
-        button_led_map[button]['status'] = gpio
-        GPIO.output(button_led_map[button]['led'], button_led_map[button]['status'])
+    state = button.button_state()
+    button._led_change_state(state)
 
 def signal_handler(signal, frame):
     global wait_mutex
