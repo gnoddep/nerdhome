@@ -11,11 +11,11 @@ import threading
 
 import RPi.GPIO as GPIO
 
-import Nerdman.Temperature as Temperature
-import Nerdman.Lux as Lux
-import Nerdman.RealTimeClock as RealTimeClock
-import Nerdman.Display as Display
-import Nerdman.LedButton as LedButton
+from Nerdman.RealTimeClock import RealTimeClock
+from Nerdman.Temperature import Temperature
+from Nerdman.Lux import Lux
+from Nerdman.Display import Display
+from Nerdman.LedButton import LedButton
 from Nerdman.Button import Button
 
 RTC_INTERRUPT = 26
@@ -48,25 +48,25 @@ def main():
     GPIO.add_event_detect(RTC_INTERRUPT, GPIO.FALLING, callback=handle_rtc_interrupt)
 
     led_buttons = [
-        LedButton.LedButton(RED_button, RED_led),
-        LedButton.LedButton(GREEN_button, GREEN_led),
-        LedButton.LedButton(ORANGE_button, ORANGE_led),
-        LedButton.LedButton(BLUE_button, BLUE_led),
+        LedButton(RED_button, RED_led),
+        LedButton(GREEN_button, GREEN_led),
+        LedButton(ORANGE_button, ORANGE_led),
+        LedButton(BLUE_button, BLUE_led),
     ]
 
     for button in led_buttons:
         button.set_callback(Button.PRESSED, handle_button_action)
         button.set_callback(Button.RELEASED, handle_button_action)
 
-    temperature = Temperature.Temperature()
-    lux = Lux.Lux()
-    display = Display.Display(display_time)
+    temperature = Temperature()
+    lux = Lux()
+    display = Display(display_time)
+    rtc = RealTimeClock()
 
     temperature.start()
     lux.start()
     display.start()
 
-    rtc = RealTimeClock.RealTimeClock()
     rtc.enable_interrupt()
 
     try:
