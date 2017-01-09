@@ -83,6 +83,7 @@ Changelog:
 
 import logging
 import time
+import threading
 
 class TSL2561(object):
     TSL2561_VISIBLE           = 2       # channel 0 - channel 1
@@ -208,19 +209,27 @@ class TSL2561(object):
         """
         Enables the device
         """
-        # Enable the device by setting the control bit to 0x03
-        self._device.write8(self.TSL2561_COMMAND_BIT |
-                         self.TSL2561_REGISTER_CONTROL,
-                         self.TSL2561_CONTROL_POWERON)
+        with self._enable_lock:
+            if self._enabled == 0:
+                # Enable the device by setting the control bit to 0x03
+                self._device.write8(self.TSL2561_COMMAND_BIT |
+                        self.TSL2561_REGISTER_CONTROL,
+                        self.TSL2561_CONTROL_POWERON)
+            self._enabled += 1
 
     def disable(self):
         """
         Disables the device (putting it in lower power sleep mode)
         """
-        # Turn the device off to save power
-        self._device.write8(self.TSL2561_COMMAND_BIT |
-                         self.TSL2561_REGISTER_CONTROL,
-                         self.TSL2561_CONTROL_POWEROFF)
+        with self._enable_lock:
+            if self._enabled > 0:
+                self._enabled -= 1
+
+            if self._enabled == 0:
+                # Turn the device off to save power
+                self._device.write8(self.TSL2561_COMMAND_BIT |
+                        self.TSL2561_REGISTER_CONTROL,
+                        self.TSL2561_CONTROL_POWEROFF)
 
     def get_data(self):
         """
@@ -260,6 +269,8 @@ class TSL2561(object):
         :param address: I2C address of TSL2561, defaults to 0x39
         """
         self._logger = logging.getLogger('Adafruit_TSL2561.TSL2561')
+        self._enabled = 0
+        self._enable_lock = threading.Lock()
         
         if i2c is None:
             import Adafruit_GPIO.I2C as I2C
@@ -547,9 +558,11 @@ class TSL2561(object):
         :param number_of_samples: Number of samples to take in a reading, defaults to 25
         :return: lux value, unsigned 16bit word (0 - 65535)
         """
+        self.enable()
         total = 0
         for i in range(number_of_samples):
             total += self.calculate_lux()
-        else:
-            return round(total / number_of_samples)
+        self.disable()
+
+        return round(total / number_of_samples)
 
