@@ -5,10 +5,14 @@
 
 from collections import deque
 import threading
-import Adafruit_TSL2561.TSL2561 as TSL2561
+import math
+from Adafruit_TSL2561.TSL2561 import TSL2561
 
 class Lux(threading.Thread):
-    def __init__(self, interval = 0.5, maximum_log_size = 30):
+    DEFAULT_INTERVAL = 1
+    DEFAULT_LOG_SIZE = 30
+
+    def __init__(self, interval = DEFAULT_INTERVAL, maximum_log_size = DEFAULT_LOG_SIZE):
         threading.Thread.__init__(self)
         
         self.running = threading.Event()
@@ -17,8 +21,9 @@ class Lux(threading.Thread):
         self.log = deque(maxlen = maximum_log_size)
         self.log_mutex = threading.Lock()
 
-        self.sensor = TSL2561.TSL2561() # Default on 0x39
+        self.sensor = TSL2561() # Default on 0x39
         self.sensor.begin()
+        self.sensor.set_integration_time(TSL2561.TSL2561_INTEGRATIONTIME_101MS)
 
     def run(self):
         self._update_lux_log()
@@ -31,15 +36,24 @@ class Lux(threading.Thread):
 
     def get_lux(self):
         with self.log_mutex:
-            try:
-                lux = self.log.pop()
-                self.log.append(lux)
-                return lux
-            except IndexError:
+            weighted_lux = 0
+            total_weight = 0
+            index = 0
+
+            for lux in self.log:
+                index += 1
+
+                weight = math.exp(index)
+                weighted_lux += lux * weight
+                total_weight += weight
+
+            if index == 0:
                 return None
 
+            return weighted_lux / total_weight
+
     def _update_lux_log(self):
-        lux = self.sensor.calculate_avg_lux()
+        lux = self.sensor.calculate_avg_lux(10)
         with self.log_mutex:
             self.log.append(lux)
 
