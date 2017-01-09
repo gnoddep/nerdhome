@@ -59,8 +59,11 @@ class Display(threading.Thread):
         self.display.write_display()
 
     def set_brightness(self, brightness):
-        self.brightness = brightness & 0x0F
+        self.brightness = min(max(brightness, 0), 0x0F)
         self.update()
+
+    def get_brightness(self):
+        return self.brightness
 
     def set_display_function(self, display_function):
         self.display_function = display_function

@@ -58,6 +58,9 @@ def main():
         button.set_callback(Button.PRESSED, handle_button_action)
         button.set_callback(Button.RELEASED, handle_button_action)
 
+    led_buttons[2].set_callback(Button.RELEASED, handle_orange_button_release)
+    led_buttons[3].set_callback(Button.RELEASED, handle_blue_button_release)
+
     temperature = Temperature()
     lux = Lux()
     display = Display(display_time)
@@ -130,6 +133,16 @@ def display_time(display):
 def handle_button_action(button):
     state = button.button_state()
     button._led_change_state(state)
+
+def handle_blue_button_release(button):
+    global display
+    display.set_brightness(display.get_brightness() + 1)
+    handle_button_action(button)
+
+def handle_orange_button_release(button):
+    global display
+    display.set_brightness(display.get_brightness() - 1)
+    handle_button_action(button)
 
 def signal_handler(signal, frame):
     global wait_mutex
