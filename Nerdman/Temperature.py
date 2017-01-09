@@ -8,7 +8,9 @@ import threading
 import Adafruit_MCP9808.MCP9808 as MCP9808
 
 class Temperature(threading.Thread):
-    def __init__(self, interval = 0.5, maximum_log_size = 30):
+    DEFAULT_INTERVAL = 300
+
+    def __init__(self, interval = DEFAULT_INTERVAL, maximum_log_size = 30):
         threading.Thread.__init__(self)
         
         self.running = threading.Event()
