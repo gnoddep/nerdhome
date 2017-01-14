@@ -27,11 +27,14 @@ class Button(object):
                 self._callbacks[state] = self.default_button_callback
 
     def button_state(self):
+        return self._button_state
+
+    def _real_button_state(self):
         with self._button_mutex:
             return GPIO.input(self._button_gpio_pin)
 
     def _button_state_change(self, gpio_pin):
-        state = self.button_state()
+        state = self._real_button_state()
         if state != self._button_state:
             self._button_state = state
             self._callbacks[self._button_state](self)
