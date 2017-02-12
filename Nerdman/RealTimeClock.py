@@ -32,7 +32,6 @@ class RealTimeClock(object):
             buf = array.array('I', [0])
             fcntl.ioctl(rtc, self.DS1307_SQW_STATUS, buf, True)
 
-            print(buf)
             control = buf[0]
 
             return {
