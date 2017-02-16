@@ -2,5 +2,7 @@ Adafruit-GPIO==1.0.1
 Adafruit-LED-Backpack==1.8.1
 Adafruit-MCP9808==1.5.3
 Adafruit-PureIO==0.2.1
+Pillow==4.0.0
 RPi.GPIO==0.6.3
+olefile==0.44
 spidev==3.2
