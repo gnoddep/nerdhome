@@ -33,8 +33,7 @@ class Display_Matrix(threading.Thread):
         ]
         self.displays = []
 
-#        for address in [0x70, 0x71, 0x72, 0x73, 0x74, 0x75]:
-        for address in [0x70, 0x71, 0x72]:
+        for address in [0x70, 0x71, 0x72, 0x73, 0x74, 0x75]:
             display = {'display': None, 'map': []}
             display['display'] = HT16K33.HT16K33(address=address)
             display['display'].begin()
