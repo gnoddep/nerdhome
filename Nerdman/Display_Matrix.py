@@ -1,7 +1,6 @@
-import threading
-
 # 8x8 matrix display's      0x70, 0x71, 0x72, 0x73, 0x74, 0x75
 
+import threading
 import sys
 import time
 from datetime import datetime
