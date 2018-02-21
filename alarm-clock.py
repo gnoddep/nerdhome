@@ -21,14 +21,14 @@ from Nerdman.Button import Button
 from Nerdman.Font.Fixed_6x8 import Fixed_6x8
 
 RTC_INTERRUPT = 7
-RED_led = 23
-RED_button = 24
-GREEN_led = 21
-GREEN_button = 22
-ORANGE_led = 19
-ORANGE_button = 18
-BLUE_led = 15
-BLUE_button = 16
+RED_led = 32
+RED_button = 36
+GREEN_led = 31
+GREEN_button = 38
+ORANGE_led = 35
+ORANGE_button = 40
+BLUE_led = 33
+BLUE_button = 37
 
 temperature = None
 lux = None
@@ -54,19 +54,16 @@ def main():
     GPIO.setup(RTC_INTERRUPT, GPIO.IN, )
     GPIO.add_event_detect(RTC_INTERRUPT, GPIO.FALLING, callback=handle_rtc_interrupt)
 
-#    led_buttons = [
-#        LedButton(RED_button, RED_led),
-#        LedButton(GREEN_button, GREEN_led),
-#        LedButton(ORANGE_button, ORANGE_led),
-#        LedButton(BLUE_button, BLUE_led),
-#    ]
+    led_buttons = [
+        LedButton(RED_button, RED_led),
+        LedButton(GREEN_button, GREEN_led),
+        LedButton(ORANGE_button, ORANGE_led),
+        LedButton(BLUE_button, BLUE_led),
+    ]
 
-#    for button in led_buttons:
-#        button.set_callback(Button.PRESSED, handle_button_action)
-#        button.set_callback(Button.RELEASED, handle_button_action)
-
-#    led_buttons[2].set_callback(Button.RELEASED, handle_orange_button_release)
-#    led_buttons[3].set_callback(Button.RELEASED, handle_blue_button_release)
+    for button in led_buttons:
+        button.set_callback(Button.PRESSED, handle_button_action)
+        button.set_callback(Button.RELEASED, handle_button_action)
 
     temperature = Temperature()
     lux = Lux()
@@ -95,8 +92,8 @@ def main():
         lux.stop()
         temperature.stop()
 
-#        for led in led_buttons:
-#            led.off()
+        for led in led_buttons:
+            led.off()
 
         GPIO.cleanup()
 
@@ -148,16 +145,6 @@ def display_time(display):
 def handle_button_action(button):
     state = button.button_state()
     button._led_change_state(state)
-
-def handle_blue_button_release(button):
-    global display
-    display.set_brightness(display.get_brightness() + 1)
-    handle_button_action(button)
-
-def handle_orange_button_release(button):
-    global display
-    display.set_brightness(display.get_brightness() - 1)
-    handle_button_action(button)
 
 def signal_handler(signal, frame):
     global wait_mutex
