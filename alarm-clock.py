@@ -4,6 +4,7 @@
 # RTC                   0x68
 # Lux sensor            0x39
 
+from time import time
 from datetime import datetime
 import fileinput
 import signal
@@ -14,11 +15,12 @@ import RPi.GPIO as GPIO
 from Nerdman.RealTimeClock import RealTimeClock
 from Nerdman.Temperature import Temperature
 from Nerdman.Lux import Lux
-from Nerdman.Display import Display
+from Nerdman.Display_Matrix import Display_Matrix
 from Nerdman.LedButton import LedButton
 from Nerdman.Button import Button
+from Nerdman.Font.Fixed_6x8 import Fixed_6x8
 
-RTC_INTERRUPT = 26
+RTC_INTERRUPT = 7
 RED_led = 23
 RED_button = 24
 GREEN_led = 21
@@ -31,9 +33,12 @@ BLUE_button = 16
 temperature = None
 lux = None
 display = None
+rtc = None
 led_buttons = []
 
 wait_mutex = threading.Event()
+
+font = Fixed_6x8()
 
 def main():
     global display
@@ -41,36 +46,39 @@ def main():
     global lux
     global wait_mutex
     global led_buttons
+    global rtc
+    global image
 
     GPIO.setmode(GPIO.BOARD)
 
-    GPIO.setup(RTC_INTERRUPT, GPIO.IN)
+    GPIO.setup(RTC_INTERRUPT, GPIO.IN, )
     GPIO.add_event_detect(RTC_INTERRUPT, GPIO.FALLING, callback=handle_rtc_interrupt)
 
-    led_buttons = [
-        LedButton(RED_button, RED_led),
-        LedButton(GREEN_button, GREEN_led),
-        LedButton(ORANGE_button, ORANGE_led),
-        LedButton(BLUE_button, BLUE_led),
-    ]
+#    led_buttons = [
+#        LedButton(RED_button, RED_led),
+#        LedButton(GREEN_button, GREEN_led),
+#        LedButton(ORANGE_button, ORANGE_led),
+#        LedButton(BLUE_button, BLUE_led),
+#    ]
 
-    for button in led_buttons:
-        button.set_callback(Button.PRESSED, handle_button_action)
-        button.set_callback(Button.RELEASED, handle_button_action)
+#    for button in led_buttons:
+#        button.set_callback(Button.PRESSED, handle_button_action)
+#        button.set_callback(Button.RELEASED, handle_button_action)
 
-    led_buttons[2].set_callback(Button.RELEASED, handle_orange_button_release)
-    led_buttons[3].set_callback(Button.RELEASED, handle_blue_button_release)
+#    led_buttons[2].set_callback(Button.RELEASED, handle_orange_button_release)
+#    led_buttons[3].set_callback(Button.RELEASED, handle_blue_button_release)
 
     temperature = Temperature()
     lux = Lux()
-    display = Display(display_time)
+    display = Display_Matrix(display_time)
     rtc = RealTimeClock()
 
     temperature.start()
     lux.start()
     display.start()
+    display.set_brightness(0x0)
 
-    rtc.enable_interrupt()
+    rtc.enable_interrupt(RealTimeClock.FREQ_4096HZ)
 
     try:
         print("Press CTRL+C to exit")
@@ -87,48 +95,44 @@ def main():
         lux.stop()
         temperature.stop()
 
-        for led in led_buttons:
-            led.off()
+#        for led in led_buttons:
+#            led.off()
 
         GPIO.cleanup()
 
     sys.exit(0)
 
 ticks = 0
-state = 0
+cur_time = 0
 def handle_rtc_interrupt(gpio):
     global display
     global temperature
     global lux
+    global rtc
     global ticks
-    global state
+    global cur_time
 
     ticks += 1
 
-    if ticks % 5 == 0:
-        state += 1
-        state %= 3
+    if ticks % 200 == 0 and not display is None:
+        new_time = int(time())
 
-        if state == 1:
-            display.set_display_function(temperature.display)
-        elif state == 2:
-            display.set_display_function(lux.display)
-        else:
-            display.set_display_function(display_time)
-
-    if not display is None:
-        display.update()
+        if cur_time != new_time:
+            cur_time = new_time
+            display.update()
 
 def display_time(display):
+    global font
+
     now = datetime.now()
+    bitmap = font.string('{:02d}:{:02d}:{:02d}'.format(now.hour, now.minute, now.second))
 
-    display.set_digit(0, int(now.hour / 10))
-    display.set_digit(1, now.hour % 10)
+    display.clear()
 
-    display.set_digit(2, int(now.minute / 10))
-    display.set_digit(3, now.minute % 10)
-
-    display.set_colon(now.second & 1)
+    for y in range(0, len(bitmap)):
+        for x in range(0, len(bitmap[y])):
+            if bitmap[y][x]:
+                display.set_pixel(2 + x, y, display.RED)
 
 def handle_button_action(button):
     state = button.button_state()
