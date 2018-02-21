@@ -125,14 +125,25 @@ def display_time(display):
     global font
 
     now = datetime.now()
-    bitmap = font.string('{:02d}:{:02d}:{:02d}'.format(now.hour, now.minute, now.second))
+
+    hour = font.string('{:02d}'.format(now.hour))
+    minute = font.string('{:02d}'.format(now.minute))
 
     display.clear()
 
-    for y in range(0, len(bitmap)):
-        for x in range(0, len(bitmap[y])):
-            if bitmap[y][x]:
-                display.set_pixel(2 + x, y, display.RED)
+    for y in range(0, len(hour)):
+        for x in range(0, len(hour[y])):
+            if hour[y][x]:
+                display.set_pixel(0 + x, y, display.RED)
+            if minute[y][x]:
+                display.set_pixel(14 + x, y, display.RED)
+
+    if now.second & 1:
+        display.set_pixel(12, 1, display.RED)
+        display.set_pixel(12, 2, display.RED)
+
+        display.set_pixel(12, 4, display.RED)
+        display.set_pixel(12, 5, display.RED)
 
 def handle_button_action(button):
     state = button.button_state()
