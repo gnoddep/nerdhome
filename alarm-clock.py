@@ -3,6 +3,7 @@
 # Temperature sensor    0x18
 # RTC                   0x68
 # Lux sensor            0x39
+# Amplifier             0x4B
 
 from time import time
 from datetime import datetime
@@ -19,21 +20,24 @@ from Nerdman.Display_Matrix import Display_Matrix
 from Nerdman.LedButton import LedButton
 from Nerdman.Button import Button
 from Nerdman.Font.Fixed_6x8 import Fixed_6x8
+from Nerdman.MAX9744 import MAX9744
 
 RTC_INTERRUPT = 7
+MUTE = 11
 RED_led = 32
-RED_button = 36
-GREEN_led = 31
-GREEN_button = 38
-ORANGE_led = 35
-ORANGE_button = 40
-BLUE_led = 33
-BLUE_button = 37
+RED_button = 31
+GREEN_led = 35
+GREEN_button = 33
+ORANGE_led = 40
+ORANGE_button = 38
+BLUE_led = 37
+BLUE_button = 36
 
 temperature = None
 lux = None
 display = None
 rtc = None
+amplifier = None
 led_buttons = []
 
 wait_mutex = threading.Event()
@@ -47,12 +51,15 @@ def main():
     global wait_mutex
     global led_buttons
     global rtc
-    global image
+    global amplifier
 
     GPIO.setmode(GPIO.BOARD)
 
-    GPIO.setup(RTC_INTERRUPT, GPIO.IN, )
+    GPIO.setup(RTC_INTERRUPT, GPIO.IN)
     GPIO.add_event_detect(RTC_INTERRUPT, GPIO.FALLING, callback=handle_rtc_interrupt)
+
+#    GPIO.setup(MUTE, GPIO.OUT)
+#    GPIO.output(MUTE, 1)
 
     led_buttons = [
         LedButton(RED_button, RED_led),
@@ -65,10 +72,14 @@ def main():
         button.set_callback(Button.PRESSED, handle_button_action)
         button.set_callback(Button.RELEASED, handle_button_action)
 
+    led_buttons[1].set_callback(Button.RELEASED, handle_volume_up_action)
+    led_buttons[0].set_callback(Button.RELEASED, handle_volume_down_action)
+
     temperature = Temperature()
     lux = Lux()
-    display = Display_Matrix(display_time)
+    display = Display_Matrix(display_handler)
     rtc = RealTimeClock()
+    amplifier = MAX9744()
 
     temperature.start()
     lux.start()
@@ -88,6 +99,7 @@ def main():
         display.set_display_function(None)
         rtc.disable_interrupt()
 
+        amplifier.set_volume(0)
         display.stop()
         lux.stop()
         temperature.stop()
@@ -118,6 +130,11 @@ def handle_rtc_interrupt(gpio):
             cur_time = new_time
             display.update()
 
+def display_handler(display):
+    display.clear()
+    display_time(display)
+    display_volume(display)
+
 def display_time(display):
     global font
 
@@ -125,8 +142,6 @@ def display_time(display):
 
     hour = font.string('{:02d}'.format(now.hour))
     minute = font.string('{:02d}'.format(now.minute))
-
-    display.clear()
 
     for y in range(0, len(hour)):
         for x in range(0, len(hour[y])):
@@ -142,9 +157,34 @@ def display_time(display):
         display.set_pixel(12, 4, display.RED)
         display.set_pixel(12, 5, display.RED)
 
+def display_volume(display):
+    global amplifier
+
+    volume = int(amplifier.get_volume() / amplifier.MAX_VOLUME * 7)
+    for y in range(0, volume):
+        display.set_pixel(47, 6 - y, display.YELLOW)
+        if y >= 2:
+            display.set_pixel(46, 6 - y, display.YELLOW)
+        if y >= 5:
+            display.set_pixel(45, 6 - y, display.YELLOW)
+
 def handle_button_action(button):
     state = button.button_state()
     button._led_change_state(state)
+
+def handle_volume_up_action(button):
+    global amplifier
+    handle_button_action(button)
+    volume = amplifier.get_volume() + 2
+    print('Volume: {}'.format(volume))
+    amplifier.set_volume(volume)
+
+def handle_volume_down_action(button):
+    global amplifier
+    handle_button_action(button)
+    volume = amplifier.get_volume() - 2
+    print('Volume: {}'.format(volume))
+    amplifier.set_volume(volume)
 
 def signal_handler(signal, frame):
     global wait_mutex
