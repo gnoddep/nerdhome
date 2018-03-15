@@ -1,0 +1,13 @@
+[Unit]
+Description=Slimme Meter
+After=network.target
+
+[Service]
+EnvironmentFile=-/etc/default/slimme-meter
+ExecStart=/usr/lib/slimme-meter/.env/bin/python3 /usr/lib/slimme-meter/slimme-meter.py $SLIMME_METER_OPTS
+Restart=on-failure
+KillMode=process
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

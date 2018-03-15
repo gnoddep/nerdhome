@@ -14,31 +14,37 @@ parser.add_argument('-d', '--database', action='store', default='smartmeter', de
 argv = parser.parse_args()
 
 meter = SmartMeter(argv.device, baudrate=argv.baudrate)
-packet = meter.read_one_packet()
-timestamp = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-meter.disconnect()
 
-data = [
-    {
-        'measurement': 'energy',
-        'tags': {
-            'host': getfqdn(),
-        },
-        'time': timestamp,
-        'fields': {
-            'high_produced': packet['kwh']['high']['produced'],
-            'high_consumed': packet['kwh']['high']['consumed'],
-            'low_produced': packet['kwh']['low']['produced'],
-            'low_consumed': packet['kwh']['low']['consumed'],
-            'tariff': packet['kwh']['tariff'],
-            'current_produced': packet['kwh']['current_produced'],
-            'current_consumed': packet['kwh']['current_consumed'],
-            'gas': packet['gas']['total'],
-        },
-    },
-]
+influxdb = InfluxDBClient(argv.hostname, database=argv.database)
+influxdb.create_database(argv.database)
 
-client = InfluxDBClient(argv.hostname, database=argv.database)
-client.create_database(argv.database)
-client.write_points(data, time_precision='s')
+try:
+    while True:
+        meter.connect()
+        packet = meter.read_one_packet()
 
+        timestamp = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        data = [
+            {
+                'measurement': 'energy',
+                'tags': {
+                    'host': getfqdn(),
+                },
+                'time': timestamp,
+                'fields': {
+                    'high_produced': packet['kwh']['high']['produced'],
+                    'high_consumed': packet['kwh']['high']['consumed'],
+                    'low_produced': packet['kwh']['low']['produced'],
+                    'low_consumed': packet['kwh']['low']['consumed'],
+                    'tariff': packet['kwh']['tariff'],
+                    'current_produced': packet['kwh']['current_produced'],
+                    'current_consumed': packet['kwh']['current_consumed'],
+                    'gas': packet['gas']['total'],
+                },
+            },
+        ]
+
+        influxdb.write_points(data, time_precision='s')
+except KeyboardInterrupt:
+    pass
