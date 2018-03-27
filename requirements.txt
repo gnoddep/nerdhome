@@ -1,3 +1,4 @@
 Adafruit-GPIO==1.0.3
 Adafruit-MCP9808==1.5.3
 RPi.GPIO==0.6.3
+influxdb==5.0.0

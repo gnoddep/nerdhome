@@ -5,7 +5,7 @@ class Button(object):
     PRESSED = 1
     RELEASED = 0
 
-    def __init__(self, gpio_pin):
+    def __init__(self, gpio_pin, bouncetime = None):
         self._button_mutex = threading.Lock()
         self._button_gpio_pin = gpio_pin
 
@@ -17,7 +17,10 @@ class Button(object):
         with self._button_mutex:
             GPIO.setup(self._button_gpio_pin, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
             self._button_state = GPIO.input(self._button_gpio_pin)
-            GPIO.add_event_detect(self._button_gpio_pin, GPIO.BOTH, self._button_state_change)
+            if bouncetime is None:
+                GPIO.add_event_detect(self._button_gpio_pin, GPIO.BOTH, self._button_state_change)
+            else:
+                GPIO.add_event_detect(self._button_gpio_pin, GPIO.BOTH, self._button_state_change, bouncetime = bouncetime)
 
     def set_callback(self, state, callback):
         with self._button_mutex:
