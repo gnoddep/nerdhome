@@ -51,6 +51,7 @@ class MqttToInfluxdb:
         except KeyboardInterrupt:
             pass
         finally:
+            self.mqtt.publish('service/mqtt-to-influxdb', 0, qos=1, retain=True)
             self.mqtt.loop_stop()
             self.mqtt.disconnect()
 
