@@ -1,21 +1,33 @@
 #!/bin/bash
 
 CWD=$(dirname $0)
+SERVICE=$1
 
-mkdir -p /usr/lib/slimme-meter
-for F in slimme-meter.py requirements.txt; do
-    cp ${CWD}/../${F} /usr/lib/slimme-meter/${F}
-done
-
-if [ ! -f /etc/default/slimme-meter ]; then
-    cp ${CWD}/slimme-meter.default /etc/default/slimme-meter
+if [ "${SERVICE}" = "" ]; then
+    echo "Which service must be installed?"
+    exit 1
 fi
 
-cp ${CWD}/slimme-meter.service /etc/systemd/system/slimme-meter.service
-systemctl daemon-reload
-systemctl enable slimme-meter.service
+mkdir -p /usr/lib/nerdhome
+for F in ${SERVICE}.py requirements.txt; do
+    cp ${CWD}/../${F} /usr/lib/nerdhome/${F}
+done
 
-cd /usr/lib/slimme-meter
+for M in Nerdman Adafruit_LED_Backpack Adafruit_TSL2561 contrib; do
+    rm -rf /usr/lib/nerdhome/${M}
+    cp -a ${CWD}/../${M} /usr/lib/nerdhome/${M}
+    chown -R root:root /usr/lib/nerdhome/${M}
+done
+
+if [ ! -f /etc/default/${SERVICE} ]; then
+    cp ${CWD}/${SERVICE}.default /etc/default/${SERVICE}
+fi
+
+cp ${CWD}/${SERVICE}.service /etc/systemd/system/${SERVICE}.service
+systemctl daemon-reload
+systemctl enable ${SERVICE}.service
+
+cd /usr/lib/nerdhome
 if [ ! -d .env ]; then
     python3 -m venv .env
 fi

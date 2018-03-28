@@ -1,0 +1,13 @@
+[Unit]
+Description=Doorbell
+After=network.target
+
+[Service]
+EnvironmentFile=-/etc/default/doorbell
+ExecStart=/usr/lib/nerdhome/.env/bin/python3 /usr/lib/nerdhome/doorbell.py -m $MQTT_BROKER
+Restart=on-failure
+KillMode=process
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

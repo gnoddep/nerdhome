@@ -1,2 +1,3 @@
 # Default options for slimme-meter
-SLIMME_METER_OPTS="-i localhost -d slimme-meter"
+INFLUXDB="localhost"
+DATABASE="slimme-meter"

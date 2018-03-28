@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 EnvironmentFile=-/etc/default/slimme-meter
-ExecStart=/usr/lib/slimme-meter/.env/bin/python3 /usr/lib/slimme-meter/slimme-meter.py $SLIMME_METER_OPTS
+ExecStart=/usr/lib/nerdhome/.env/bin/python3 /usr/lib/nerdhome/slimme-meter.py -i $INFLUXDB -d $DATABASE
 Restart=on-failure
 KillMode=process
 Type=simple
