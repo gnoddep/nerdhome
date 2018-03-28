@@ -1,63 +1,94 @@
+#!/usr/bin/env python3
+
+import sys
 from smeterd.meter import SmartMeter
 from influxdb import InfluxDBClient
 from socket import getfqdn
 from time import sleep
 from datetime import datetime
 from argparse import ArgumentParser
+from paho.mqtt.client import Client as MqttClient
 
-parser = ArgumentParser(description='Read data from the smart meter and send it to influxdb')
-parser.add_argument('-t', '--device', action='store', default='/dev/ttyUSB0', dest='device')
-parser.add_argument('-b', '--baudrate', action='store', default=115200, dest='baudrate')
-parser.add_argument('-i', '--hostname', action='store', default='localhost', dest='hostname')
-parser.add_argument('-d', '--database', action='store', default='smartmeter', dest='database')
-parser.add_argument('-v', '--verbose', action='store_true', default=False, dest='verbose')
+class SlimmeMeter:
+    def __init__(self):
+        self.verbose = False
+        self.mqtt = MqttClient()
+        self.fqdn = getfqdn()
 
-argv = parser.parse_args()
-verbose = argv.verbose
+    def run(self):
+        parser = ArgumentParser(description='Read data from the smart meter and send it to influxdb')
+        parser.add_argument('-t', '--device', action='store', default='/dev/ttyUSB0', dest='device')
+        parser.add_argument('-b', '--baudrate', action='store', default=115200, dest='baudrate')
+        parser.add_argument('-i', '--hostname', action='store', default='localhost', dest='hostname')
+        parser.add_argument('-d', '--database', action='store', default='smartmeter', dest='database')
+        parser.add_argument('-v', '--verbose', action='store_true', default=False, dest='verbose')
 
-if verbose:
-    print('Starting SmartMeter', argv.device, '@', argv.baudrate)
+        argv = parser.parse_args()
+        self.verbose = argv.verbose
 
-meter = SmartMeter(argv.device, baudrate=argv.baudrate)
+        if self.verbose:
+            print('Starting SmartMeter', argv.device, '@', argv.baudrate)
 
-if verbose:
-    print('Connecting to influxdb', argv.hostname, 'db', argv.database)
+        meter = SmartMeter(argv.device, baudrate=argv.baudrate)
 
-influxdb = InfluxDBClient(argv.hostname, database=argv.database)
-influxdb.create_database(argv.database)
+        if self.verbose:
+            print('Connecting to influxdb', argv.hostname, 'db', argv.database)
 
-fqdn = getfqdn()
+        influxdb = InfluxDBClient(argv.hostname, database=argv.database)
+        influxdb.create_database(argv.database)
 
-try:
-    while True:
-        meter.connect()
-        packet = meter.read_one_packet()
+        try:
+            self.mqtt = MqttClient()
+            self.mqtt.on_connect = self._mqtt_on_connect
+            self.mqtt.connect(argv.hostname)
+            self.mqtt.loop_start()
 
-        timestamp = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            while True:
+                meter.connect()
+                packet = meter.read_one_packet()
 
-        data = [
-            {
-                'measurement': 'energy',
-                'tags': {
-                    'host': fqdn,
-                },
-                'time': timestamp,
-                'fields': {
-                    'high_produced': packet['kwh']['high']['produced'],
-                    'high_consumed': packet['kwh']['high']['consumed'],
-                    'low_produced': packet['kwh']['low']['produced'],
-                    'low_consumed': packet['kwh']['low']['consumed'],
-                    'tariff': packet['kwh']['tariff'],
-                    'current_produced': packet['kwh']['current_produced'],
-                    'current_consumed': packet['kwh']['current_consumed'],
-                    'gas': packet['gas']['total'],
-                },
-            },
-        ]
+                timestamp = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
-        if verbose:
-            print(data)
+                data = [
+                    {
+                        'measurement': 'energy',
+                        'tags': {
+                            'host': self.fqdn,
+                        },
+                        'time': timestamp,
+                        'fields': {
+                            'high_produced': packet['kwh']['high']['produced'],
+                            'high_consumed': packet['kwh']['high']['consumed'],
+                            'low_produced': packet['kwh']['low']['produced'],
+                            'low_consumed': packet['kwh']['low']['consumed'],
+                            'tariff': packet['kwh']['tariff'],
+                            'current_produced': packet['kwh']['current_produced'],
+                            'current_consumed': packet['kwh']['current_consumed'],
+                            'gas': packet['gas']['total'],
+                        },
+                    },
+                ]
 
-        influxdb.write_points(data, time_precision='s')
-except KeyboardInterrupt:
-    pass
+                if self.verbose:
+                    print(data)
+
+                influxdb.write_points(data, time_precision='s')
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.mqtt.publish('service/slimme-meter', 0, qos=1, retain=True)
+            self.mqtt.loop_stop()
+            self.mqtt.disconnect()
+
+        sys.exit(0)
+
+    def _mqtt_on_connect(self, client, userdata, flags, rc):
+        if self.verbose:
+            print('Connected to MQTT:', str(rc))
+
+        client.will_set('service/slimme-meter', 0, qos=1, retain=True)
+        client.publish('service/slimme-meter', 1, qos=1, retain=True)
+
+if __name__ == '__main__':
+    SlimmeMeter().run()
+
