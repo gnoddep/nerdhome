@@ -38,6 +38,7 @@ class Doorbell:
         intercom.on_changed(self._handle_doorbell)
 
         try:
+            self.mqtt.on_connect = self._mqtt_on_connect
             self.mqtt.connect(argv.hostname)
             self.mqtt.loop_start()
 
@@ -48,6 +49,7 @@ class Doorbell:
         except KeyboardInterrupt:
             pass
         finally:
+            self.mqtt.publish('service/doorbell', 0, qos=1, retain=True)
             self.mqtt.loop_stop()
             self.mqtt.disconnect()
             GPIO.cleanup()
@@ -60,6 +62,13 @@ class Doorbell:
 
         if self.verbose:
             print(datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f'), 'The', button.name(), 'doorbell is', 'pressed' if state else 'released')
+
+    def _mqtt_on_connect(self, client, userdata, flags, rc):
+        if self.verbose:
+            print('Connected to MQTT:', str(rc))
+
+        client.will_set('service/doorbell', 0, qos=1, retain=True)
+        client.publish('service/doorbell', 1, qos=1, retain=True)
 
     def _signal_handler(self, signal, frame):
         self.wait_mutex.set()
