@@ -66,11 +66,10 @@ def main():
     ]
 
     for button in led_buttons:
-        button.set_callback(Button.PRESSED, handle_button_action)
-        button.set_callback(Button.RELEASED, handle_button_action)
+        button.on_changed(handle_button_action)
 
-    led_buttons[0].set_callback(Button.PRESSED, None)
-    led_buttons[0].set_callback(Button.RELEASED, handle_toggle_mute)
+    led_buttons[0].on_pressed(None)
+    led_buttons[0].on_released(handle_toggle_mute)
 
     temperature = Temperature()
     lux = Lux()

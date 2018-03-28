@@ -5,9 +5,10 @@ class Button(object):
     PRESSED = 1
     RELEASED = 0
 
-    def __init__(self, gpio_pin, bouncetime = None):
+    def __init__(self, gpio_pin, bouncetime = None, name = None):
         self._button_mutex = threading.Lock()
         self._button_gpio_pin = gpio_pin
+        self._name = name
 
         self._callbacks = [
             self._button_default_callback,
@@ -22,15 +23,25 @@ class Button(object):
             else:
                 GPIO.add_event_detect(self._button_gpio_pin, GPIO.BOTH, self._button_state_change, bouncetime = bouncetime)
 
-    def set_callback(self, state, callback):
+    def on_released(self, callback):
         with self._button_mutex:
-            if callback is not None:
-                self._callbacks[state] = callback
-            else:
-                self._callbacks[state] = self._button_default_callback
+            self._callbacks[self.RELEASED] = callback or self._button_default_callback
+
+    def on_pressed(self, callback):
+        with self._button_mutex:
+            self._callbacks[self.PRESSED] = callback or self._button_default_callback
+
+    def on_changed(self, callback):
+        with self._button_mutex:
+            callback = callback or self._button_default_callback
+            self._callbacks[self.RELEASED] = callback
+            self._callbacks[self.PRESSED] = callback
 
     def button_state(self):
         return self._button_state
+
+    def name(self):
+        return self._name
 
     def _real_button_state(self):
         with self._button_mutex:

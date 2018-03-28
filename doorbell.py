@@ -28,13 +28,13 @@ def main():
 
     GPIO.setmode(GPIO.BOARD)
 
-    doorbellDownstairs = Button(DOORBELL_DOWNSTAIRS)
-    doorbellDownstairs.set_callback(Button.PRESSED, doorbell_downstairs_pressed)
-    doorbellDownstairs.set_callback(Button.RELEASED, doorbell_downstairs_released)
+    doorbellDownstairs = Button(DOORBELL_DOWNSTAIRS, bouncetime=100)
+    doorbellDownstairs.on_pressed(doorbell_downstairs_pressed)
+    doorbellDownstairs.on_released(doorbell_downstairs_released)
 
-    doorbellUpstairs = Button(DOORBELL_UPSTAIRS)
-    doorbellUpstairs.set_callback(Button.PRESSED, doorbell_upstairs_pressed)
-    doorbellUpstairs.set_callback(Button.RELEASED, doorbell_upstairs_released)
+    doorbellUpstairs = Button(DOORBELL_UPSTAIRS, bouncetime=100)
+    doorbellUpstairs.on_pressed(doorbell_upstairs_pressed)
+    doorbellUpstairs.on_released(doorbell_upstairs_released)
 
     influxdb = InfluxDBClient(argv.hostname, database=argv.database)
     influxdb.create_database(argv.database)
