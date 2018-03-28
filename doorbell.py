@@ -28,13 +28,11 @@ def main():
 
     GPIO.setmode(GPIO.BOARD)
 
-    doorbellDownstairs = Button(DOORBELL_DOWNSTAIRS, bouncetime=100)
-    doorbellDownstairs.on_pressed(doorbell_downstairs_pressed)
-    doorbellDownstairs.on_released(doorbell_downstairs_released)
+    doorbellDownstairs = Button(DOORBELL_DOWNSTAIRS, name='intercom', bouncetime=100)
+    doorbellDownstairs.on_changed(handle_doorbell)
 
-    doorbellUpstairs = Button(DOORBELL_UPSTAIRS, bouncetime=100)
-    doorbellUpstairs.on_pressed(doorbell_upstairs_pressed)
-    doorbellUpstairs.on_released(doorbell_upstairs_released)
+    doorbellUpstairs = Button(DOORBELL_UPSTAIRS, name='door', bouncetime=100)
+    doorbellUpstairs.on_changed(handle_doorbell)
 
     influxdb = InfluxDBClient(argv.hostname, database=argv.database)
     influxdb.create_database(argv.database)
@@ -51,25 +49,11 @@ def main():
 
     sys.exit(0)
 
-def doorbell_downstairs_pressed(button):
+def handle_doorbell(button):
     timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
-    send_to_influxdb('intercom', 1)
-    print(timestamp, 'The intercom doorbell is pressed')
-
-def doorbell_downstairs_released(button):
-    timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
-    send_to_influxdb('intercom', 0)
-    print(timestamp, 'The intercom doorbell is released')
-
-def doorbell_upstairs_pressed(button):
-    timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
-    send_to_influxdb('door', 1)
-    print(timestamp, 'The door doorbell is pressed')
-
-def doorbell_upstairs_released(button):
-    timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
-    send_to_influxdb('door', 0)
-    print(timestamp, 'The door doorbell is released')
+    state = button.button_state()
+    send_to_influxdb(button.name(), state)
+    print(timestamp, 'The', button.name(), 'doorbell is', 'pressed' if state else 'released')
 
 def signal_handler(signal, frame):
     global wait_mutex
