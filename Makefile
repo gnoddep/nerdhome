@@ -5,3 +5,6 @@ install-slimme-meter:
 
 install-doorbell:
 	sudo ./install/install.sh doorbell
+
+install-mqtt-to-influxdb:
+	sudo ./install/install.sh mqtt-to-influxdb
