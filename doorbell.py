@@ -57,11 +57,12 @@ class Doorbell:
         sys.exit(0)
 
     def _handle_doorbell(self, button):
+        timestamp = time()
         state = button.button_state()
-        self.mqtt.publish('doorbell/' + button.name(), str(state) + ':' + str(time()), qos=0)
+        self.mqtt.publish('doorbell/' + button.name(), str(state) + ':' + str(timestamp), qos=0)
 
         if self.verbose:
-            print(datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f'), 'The', button.name(), 'doorbell is', 'pressed' if state else 'released')
+            print(datetime.fromtimestamp(timestamp).strftime('%Y-%m-%dT%H:%M:%S.%f'), 'The', button.name(), 'doorbell is', 'pressed' if state else 'released')
 
     def _mqtt_on_connect(self, client, userdata, flags, rc):
         if self.verbose:
