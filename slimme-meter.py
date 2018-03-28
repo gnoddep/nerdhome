@@ -10,13 +10,23 @@ parser.add_argument('-t', '--device', action='store', default='/dev/ttyUSB0', de
 parser.add_argument('-b', '--baudrate', action='store', default=115200, dest='baudrate')
 parser.add_argument('-i', '--hostname', action='store', default='localhost', dest='hostname')
 parser.add_argument('-d', '--database', action='store', default='smartmeter', dest='database')
+parser.add_argument('-v', '--verbose', action='store_true', default=False, dest='verbose')
 
 argv = parser.parse_args()
+verbose = argv.verbose
+
+if verbose:
+    print('Starting SmartMeter', argv.device, '@', argv.baudrate)
 
 meter = SmartMeter(argv.device, baudrate=argv.baudrate)
 
+if verbose:
+    print('Connecting to influxdb', argv.hostname, 'db', argv.database)
+
 influxdb = InfluxDBClient(argv.hostname, database=argv.database)
 influxdb.create_database(argv.database)
+
+fqdn = getfqdn()
 
 try:
     while True:
@@ -29,7 +39,7 @@ try:
             {
                 'measurement': 'energy',
                 'tags': {
-                    'host': getfqdn(),
+                    'host': fqdn,
                 },
                 'time': timestamp,
                 'fields': {
@@ -44,6 +54,9 @@ try:
                 },
             },
         ]
+
+        if verbose:
+            print(data)
 
         influxdb.write_points(data, time_precision='s')
 except KeyboardInterrupt:
