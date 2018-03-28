@@ -19,11 +19,15 @@ class Doorbell:
         self.wait_mutex = threading.Event()
         signal.signal(signal.SIGINT, self._signal_handler)
         self.mqtt = MqttClient()
+        self.verbose = False
 
     def run(self):
         parser = ArgumentParser(description='Read data from the doorbell relays send it to MQTT')
         parser.add_argument('-m', '--hostname', action='store', default='localhost', dest='hostname')
+        parser.add_argument('-v', '--verbose', action='store_true', default=False, dest='verbose')
         argv = parser.parse_args()
+
+        self.verbose = argv.verbose
 
         GPIO.setmode(GPIO.BOARD)
 
@@ -37,9 +41,8 @@ class Doorbell:
             self.mqtt.connect(argv.hostname)
             self.mqtt.loop_start()
 
-            self._handle_doorbell(door)
-
-            print("Press CTRL+C to exit")
+            if self.verbose:
+                print("Press CTRL+C to exit")
             while not self.wait_mutex.wait():
                 pass
         except KeyboardInterrupt:
@@ -54,7 +57,9 @@ class Doorbell:
     def _handle_doorbell(self, button):
         state = button.button_state()
         self.mqtt.publish('doorbell/' + button.name(), str(state) + ':' + str(time()), qos=0)
-        print(datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f'), 'The', button.name(), 'doorbell is', 'pressed' if state else 'released')
+
+        if self.verbose:
+            print(datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f'), 'The', button.name(), 'doorbell is', 'pressed' if state else 'released')
 
     def _signal_handler(self, signal, frame):
         self.wait_mutex.set()
