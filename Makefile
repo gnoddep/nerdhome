@@ -1,4 +1,4 @@
 .PHONY: install
 
 install:
-	sudo ./install.sh
+	sudo ./install/install.sh
