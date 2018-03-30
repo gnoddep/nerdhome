@@ -7,7 +7,7 @@ class Doorbell(threading.Thread):
 
         self._verbose = verbose
         self._running = True
-        self._condition = threading.Condition()
+        self._condition = threading.Condition(threading.Lock())
         self._ring_times = 0
         self._relay = None
 
