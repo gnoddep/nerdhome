@@ -34,10 +34,10 @@ class Application:
 
         GPIO.setmode(GPIO.BOARD)
 
-        door = LedButton(self.DOOR_BUTTON, self.DOOR_RELAY, name='door', bouncetime=100)
+        door = LedButton(self.DOOR_BUTTON, self.DOOR_RELAY, name='door')
         door.on_changed(self._handle_doorbell)
 
-        intercom = LedButton(self.INTERCOM_BUTTON, self.INTERCOM_RELAY, name='intercom', bouncetime=100)
+        intercom = LedButton(self.INTERCOM_BUTTON, self.INTERCOM_RELAY, name='intercom')
         intercom.on_changed(self._handle_doorbell)
 
         self.doorbell = Doorbell(self.verbose)
