@@ -67,8 +67,17 @@ class Nerdhome:
                 application.start()
 
             # And now, we wait!
-            while not self.__exit.wait():
-                pass
+            while not self.__exit.wait(1):
+
+                # But not without checking for live
+                alive_count = 0
+                for name, application in self.__applications.items():
+                    if not application.is_alive():
+                        if verbose:
+                            print('Application', name, 'is not alive anymore')
+
+                if alive_count == 0:
+                    raise RuntimeError('No active applications anymore')
         except KeyboardInterrupt:
             self.__exit.set()
         finally:
