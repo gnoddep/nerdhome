@@ -15,8 +15,8 @@ import sys
 from datetime import datetime
 from Adafruit_LED_Backpack import SevenSegment
 
-class Display(threading.Thread):
-    def __init__(self, display_function = None):
+class Display_SevenSegment(threading.Thread):
+    def __init__(self, display_function = None, address=0x70):
         threading.Thread.__init__(self)
 
         self.wait_for_update = threading.Event()
@@ -24,7 +24,7 @@ class Display(threading.Thread):
 
         self.running = False
 
-        self.display = SevenSegment.SevenSegment()
+        self.display = SevenSegment.SevenSegment(address=address)
         self.display.begin()
 
         self.display_function = display_function
