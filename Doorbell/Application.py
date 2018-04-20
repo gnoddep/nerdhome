@@ -7,6 +7,7 @@ from Doorbell.Doorbell import Doorbell
 
 import Nerdhome.Application
 
+
 class Application(Nerdhome.Application):
     INTERCOM_BUTTON = 18
     DOOR_BUTTON = 15
@@ -51,7 +52,10 @@ class Application(Nerdhome.Application):
             self.doorbell.ring(button, 1 if button.name() == 'door' else 3)
 
         if self.verbose:
-            print(datetime.fromtimestamp(timestamp).strftime('%Y-%m-%dT%H:%M:%S.%f'), 'The', button.name(), 'doorbell is', 'pressed' if state else 'released')
+            print(
+                datetime.fromtimestamp(timestamp).strftime('%Y-%m-%dT%H:%M:%S.%f'),
+                'The', button.name(), 'doorbell is', 'pressed' if state else 'released'
+            )
 
     def on_mqtt_connect(self, client, userdata, flags, rc):
         if self.verbose:

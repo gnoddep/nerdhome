@@ -5,7 +5,7 @@ class Configuration():
     def __init__(self, filename=None, configuration={}):
         self.__configuration = configuration
 
-        if not filename is None:
+        if filename is not None:
             with open(filename, 'r') as fd:
                 self.__configuration = json.load(fd)
 

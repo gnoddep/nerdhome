@@ -1,6 +1,7 @@
 import threading
 from time import sleep
 
+
 class Doorbell(threading.Thread):
     def __init__(self, verbose=False):
         super(Doorbell, self).__init__()

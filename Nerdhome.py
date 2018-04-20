@@ -9,6 +9,7 @@ from threading import Event
 from Nerdhome import Application
 from Nerdhome import Configuration
 
+
 class Nerdhome:
     verbose = 0
     configuration = None
@@ -42,8 +43,9 @@ class Nerdhome:
 
             # Initialize the threads
             mqtt = configuration.get('mqtt', default=None)
-            if not mqtt is None:
-                self.__mqtt = import_module('paho.mqtt.client').Client()
+            if mqtt is not None:
+                from paho.mqtt.client import Client as MqttClient
+                self.__mqtt = MqttClient()
                 self.__mqtt.on_connect = self.__on_mqtt_connect
 
             for application, config in configuration.get('applications').items():
@@ -57,7 +59,7 @@ class Nerdhome:
                     raise NotImplementedError(application + ' is not of the right type')
 
             # Start the threads
-            if not self.__mqtt is None:
+            if self.__mqtt is not None:
                 self.__mqtt.connect(mqtt['hostname'])
                 self.__mqtt.loop_start()
 
@@ -76,7 +78,7 @@ class Nerdhome:
             for name, application in self.__applications.items():
                 application.join()
 
-            if not self.__mqtt is None:
+            if self.__mqtt is not None:
                 self.__mqtt.loop_stop()
                 self.__mqtt.disconnect()
 
