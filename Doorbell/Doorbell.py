@@ -3,7 +3,7 @@ from time import sleep
 
 class Doorbell(threading.Thread):
     def __init__(self, verbose=False):
-        threading.Thread.__init__(self)
+        super(Doorbell, self).__init__()
 
         self._verbose = verbose
         self._running = True

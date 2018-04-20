@@ -13,8 +13,9 @@ class Nerdhome:
     verbose = 0
     configuration = None
 
-    __exit = Event()
     __applications = {}
+    __exit = Event()
+    __mqtt = None
 
     def __init__(self):
         signal.signal(signal.SIGINT, self.__signal_handler)
@@ -39,17 +40,31 @@ class Nerdhome:
             verbose = min(3, args.verbose)
             configuration = Configuration(args.configuration)
 
+            # Initialize the threads
+            mqtt = configuration.get('mqtt', default=None)
+            if not mqtt is None:
+                self.__mqtt = import_module('paho.mqtt.client').Client()
+                self.__mqtt.on_connect = self.__on_mqtt_connect
+
             for application, config in configuration.get('applications').items():
                 self.__applications[application] = import_module(application).Application(
                     configuration=Configuration(configuration=config),
+                    mqtt=self.__mqtt,
                     name=application
                 )
 
                 if not isinstance(self.__applications[application], Application):
                     raise NotImplementedError(application + ' is not of the right type')
 
-                self.__applications[application].start()
+            # Start the threads
+            if not self.__mqtt is None:
+                self.__mqtt.connect(mqtt['hostname'])
+                self.__mqtt.loop_start()
 
+            for name, application in self.__applications.items():
+                application.start()
+
+            # And now, we wait!
             while not self.__exit.wait():
                 pass
         except KeyboardInterrupt:
@@ -61,10 +76,18 @@ class Nerdhome:
             for name, application in self.__applications.items():
                 application.join()
 
+            if not self.__mqtt is None:
+                self.__mqtt.loop_stop()
+                self.__mqtt.disconnect()
+
             pass
 
     def __signal_handler(self, signum, frame):
         self.__exit.set()
+
+    def __on_mqtt_connect(self, client, userdata, flags, rc):
+        for name, application in self.__applications.items():
+            application.on_mqtt_connect(client, userdata, flags, rc)
 
 
 if __name__ == '__main__':

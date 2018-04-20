@@ -2,12 +2,14 @@ import threading
 
 
 class Application(threading.Thread):
-    def __init__(self, configuration={}, loop_interval=None, *args, **kwargs):
+    def __init__(self, configuration={}, mqtt=None, loop_interval=None, *args, **kwargs):
         super(Application, self).__init__(*args, **kwargs)
 
         self.__exit = threading.Event()
         self.__loop_interval = loop_interval
+
         self.configuration = configuration
+        self.mqtt = mqtt
 
     def run(self):
         try:
@@ -25,6 +27,9 @@ class Application(threading.Thread):
         pass
 
     def cleanup(self):
+        pass
+
+    def on_mqtt_connect(self, client, userdata, flags, rc):
         pass
 
     def wait(self):
