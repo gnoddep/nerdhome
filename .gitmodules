@@ -1,3 +1,0 @@
-[submodule "contrib/Adafruit_Python_LED_Backpack"]
-	path = contrib/Adafruit_Python_LED_Backpack
-	url = https://github.com/gnoddep/Adafruit_Python_LED_Backpack.git
