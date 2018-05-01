@@ -1,5 +1,4 @@
 import smeterd.meter
-from influxdb import InfluxDBClient
 from datetime import datetime
 
 from Nerdhome import Application
@@ -10,7 +9,6 @@ class SmartMeter(Application):
         # Loop interval can be 0, because the smart meter itself will limit the rate
         super(SmartMeter, self).__init__(loop_interval=0, *args, **kwargs)
         self.verbose = False
-        self.influxdb = None
         self.smeter = None
 
     def initialize(self):
@@ -29,9 +27,6 @@ class SmartMeter(Application):
 
         if self.verbose:
             print('Connecting to influxdb', hostname, 'db', database)
-
-        self.influxdb = InfluxDBClient(hostname, database)
-        self.influxdb.create_database(database)
 
     def cleanup(self):
         self.mqtt.publish('service/smartmeter', 0, qos=1, retain=True)

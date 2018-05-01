@@ -16,10 +16,11 @@ class Nerdhome:
 
     __applications = {}
     __exit = Event()
-    __mqtt = None
 
     def __init__(self):
         signal.signal(signal.SIGINT, self.__signal_handler)
+        self.__mqtt = None
+        self.__infuxdb = None
 
     def run(self):
         try:
@@ -48,10 +49,16 @@ class Nerdhome:
                 self.__mqtt = MqttClient()
                 self.__mqtt.on_connect = self.__on_mqtt_connect
 
+            influxdb = configuration.get('influxdb', default=None)
+            if influxdb is not None:
+                from Nerdhome import InfluxDB
+                self.__influxdb = InfluxDB(configuration=Configuration(influxdb))
+
             for application, config in configuration.get('applications').items():
                 self.__applications[application] = import_module(application).Application(
                     configuration=Configuration(configuration=config),
                     mqtt=self.__mqtt,
+                    infuxdb=self.__influxdb,
                     name=application
                 )
 
@@ -62,6 +69,10 @@ class Nerdhome:
             if self.__mqtt is not None:
                 self.__mqtt.connect(mqtt['hostname'])
                 self.__mqtt.loop_start()
+
+            if self.__influxdb is not None:
+                self.__influxdb.connect()
+                self.__influxdb.start()
 
             for name, application in self.__applications.items():
                 application.start()
@@ -86,6 +97,10 @@ class Nerdhome:
 
             for name, application in self.__applications.items():
                 application.join()
+
+            if self.__influxdb is not None:
+                self.__influxdb.stop()
+                self.__influxdb.join()
 
             if self.__mqtt is not None:
                 self.__mqtt.loop_stop()

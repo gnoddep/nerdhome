@@ -2,7 +2,7 @@ import threading
 
 
 class Application(threading.Thread):
-    def __init__(self, configuration={}, mqtt=None, loop_interval=None, *args, **kwargs):
+    def __init__(self, configuration={}, mqtt=None, influxdb=None, loop_interval=None, *args, **kwargs):
         super(Application, self).__init__(*args, **kwargs)
 
         self.__exit = threading.Event()
@@ -10,6 +10,7 @@ class Application(threading.Thread):
 
         self.configuration = configuration
         self.mqtt = mqtt
+        self.influxdb = influxdb
 
     def run(self):
         try:
