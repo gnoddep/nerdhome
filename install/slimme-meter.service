@@ -5,7 +5,8 @@ After=network.target
 [Service]
 EnvironmentFile=-/etc/default/slimme-meter
 ExecStart=/usr/lib/nerdhome/.env/bin/python3 /usr/lib/nerdhome/slimme-meter.py -i $INFLUXDB -d $DATABASE
-Restart=on-failure
+Restart=always
+RestartSec=10
 KillMode=process
 Type=simple
 
