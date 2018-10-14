@@ -1,11 +1,13 @@
 [Unit]
 Description=MQTT to Influxdb
-After=network.target
+After=network.target mosquitto.service
+Require=mosquitto.service
 
 [Service]
 EnvironmentFile=-/etc/default/mqtt-to-influxdb
 ExecStart=/usr/lib/nerdhome/.env/bin/python3 /usr/lib/nerdhome/mqtt-to-influxdb.py -m $MQTT_BROKER -i $INFLUXDB -d $DATABASE
-Restart=on-failure
+Restart=always
+RestartSec=10
 KillMode=process
 Type=simple
 
