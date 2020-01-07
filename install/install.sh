@@ -13,7 +13,7 @@ for F in ${SERVICE}.py requirements.txt; do
     cp ${CWD}/../${F} /usr/lib/nerdhome/${F}
 done
 
-for M in Nerdman Doorbell Adafruit_LED_Backpack Adafruit_TSL2561 contrib; do
+for M in Nerdman Doorbell Adafruit_TSL2561; do
     rm -rf /usr/lib/nerdhome/${M}
     cp -a ${CWD}/../${M} /usr/lib/nerdhome/${M}
     chown -R root:root /usr/lib/nerdhome/${M}
