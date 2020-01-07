@@ -7,7 +7,7 @@ Require=mosquitto.service
 EnvironmentFile=-/etc/default/mqtt-to-influxdb
 ExecStart=/usr/lib/nerdhome/.env/bin/python3 /usr/lib/nerdhome/mqtt-to-influxdb.py -m $MQTT_BROKER -i $INFLUXDB -d $DATABASE
 Restart=always
-RestartSec=10
+RestartSec=5
 KillMode=process
 Type=simple
 
