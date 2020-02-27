@@ -1,0 +1,16 @@
+{
+    "mqtt": {
+        "hostname": "hardin.home.gnodde.org"
+    },
+    "influxdb": {
+        "hostname": "hardin.home.gnodde.org",
+        "database": "nerdman"
+    },
+    "applications": {
+        "SmartMeter": {
+            "verbose": true,
+            "device": "/dev/ttyUSB0",
+            "baudrate": 115200
+        }
+    }
+}
