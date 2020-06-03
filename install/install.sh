@@ -33,5 +33,6 @@ if [ ! -d .env ]; then
 fi
 
 . ./.env/bin/activate
+python -m pip install wheel
 pip install -r requirements.txt
 deactivate
