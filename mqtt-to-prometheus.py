@@ -54,7 +54,7 @@ class MqttToPrometheus(object):
         try:
             parser = ArgumentParser(description='Read data from MQTT and make it available for Prometheus')
             parser.add_argument('-m', '--mqtt', action='store', default='localhost', dest='mqtt')
-            parser.add_argument('-p', '--port', action='store', default=8000, dest='port')
+            parser.add_argument('-p', '--port', action='store', default=8000, dest='port', type=int)
             parser.add_argument('-v', '--verbose', action='store_true', default=False, dest='verbose')
             argv = parser.parse_args()
 
