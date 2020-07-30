@@ -67,9 +67,7 @@ class SmartMeter(object):
                     'current_produced': packet['kwh']['current_produced'],
                     'current_consumed': packet['kwh']['current_consumed'],
                     'gas_consumed': packet['gas']['total'],
-                    'tags': {
-                        'tariff': tariff,
-                    },
+                    'tariff': tariff,
                     'timestamp': timestamp,
                 }
 
