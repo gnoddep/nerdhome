@@ -13,13 +13,21 @@ class Application(threading.Thread):
         self.mqtt = mqtt
         self.influxdb = influxdb
 
+        self.name = kwargs.get('name', 'Unknown')
+
     def run(self):
         try:
+            if self.verbose > 2:
+                print(self.name, 'Initialize')
             self.initialize()
 
             while not self.wait():
+                if self.verbose > 2:
+                    print(self.name, 'Loop')
                 self.loop()
         finally:
+            if self.verbose > 2:
+                print(self.name, 'Cleanup')
             self.cleanup()
 
     def loop(self):
