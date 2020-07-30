@@ -8,7 +8,7 @@ from time import time
 
 import RPi.GPIO as GPIO
 from Nerdman.LedButton import LedButton
-from Doorbell import Doorbell
+from Nerdman.Doorbell import Doorbell
 
 
 class Application(object):

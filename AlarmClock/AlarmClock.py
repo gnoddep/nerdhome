@@ -1,30 +1,36 @@
 from time import localtime
+import signal
+import threading
 
-from Nerdhome import Application
 from Nerdman.Display_SevenSegment import Display_SevenSegment
 
 
-class AlarmClock(Application):
-    def __init__(self, *args, **kwargs):
-        super(AlarmClock, self).__init__(loop_interval=0.1, *args, **kwargs)
+class AlarmClock(object):
+    def __init__(self):
+        self.__config = {}
         self.__display = None
 
-    def initialize(self):
-        self.__display = Display_SevenSegment(
-            self.__display_handler,
-            address=self.configuration.get('SevenSegment', 'i2c_address', default=0x77)
-        )
+        self.__wait_mutex = threading.Event()
+        signal.signal(signal.SIGINT, self.__signal_handler)
 
-        self.__display.start()
-        self.__display.set_brightness(self.configuration.get('SevenSegment', 'brightness', default=0x00))
+    def run(self):
+        try:
+            self.__display = Display_SevenSegment(
+                self.__display_handler,
+                address=self.__config.get('SevenSegment', {}).get('i2c_address', 0x77)
+            )
 
-    def cleanup(self):
-        if self.__display is not None:
-            self.__display.set_display_function(None)
-            self.__display.stop()
+            self.__display.start()
+            self.__display.set_brightness(self.__config.get('SevenSegment', {}).get('brightness', 0x00))
 
-    def loop(self):
-        self.__display.update()
+            while self.__wait_mutex.wait(0.1):
+                self.__display.update()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            if self.__display is not None:
+                self.__display.set_display_function(None)
+                self.__display.stop()
 
     @staticmethod
     def __display_handler(display):
@@ -38,3 +44,10 @@ class AlarmClock(Application):
         display.set_digit(3, int(now.tm_min % 10))
 
         display.set_colon(now.tm_sec & 1)
+
+    def __signal_handler(self, signal, frame):
+        self.__wait_mutex.set()
+
+
+if __name__ == '__main__':
+    AlarmClock().run()

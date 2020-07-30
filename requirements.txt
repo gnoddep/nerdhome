@@ -6,6 +6,5 @@ paho-mqtt==1.5.0
 prometheus_client==0.8.0
 python-dateutil==2.8.1
 smeterd==2.7.3
-influxdb==5.0.0
 zeroconf==0.24.5
 phue==1.1

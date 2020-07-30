@@ -1,4 +1,0 @@
-# Default options for mqtt-to-influxdb
-MQTT_BROKER="localhost"
-INFLUXDB="localhost"
-DATABASE="slimme-meter"
