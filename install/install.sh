@@ -45,4 +45,10 @@ fi
 . ./.env/bin/activate
 python -m pip install wheel
 pip install -r requirements.txt
+
+MODEL=$(cat /proc/cpuinfo | grep "^Model")
+if echo ${MODEL} | grep -q "Raspberry Pi"; then
+    pip install -r requirements-rpi.txt
+fi
+
 deactivate
