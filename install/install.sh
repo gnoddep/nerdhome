@@ -9,7 +9,7 @@ if [ "${SERVICE}" = "" ]; then
 fi
 
 mkdir -p /usr/lib/nerdhome
-for F in ${SERVICE}.py requirements.txt; do
+for F in ${SERVICE}.py requirements*.txt; do
     cp ${CWD}/../${F} /usr/lib/nerdhome/${F}
 done
 
