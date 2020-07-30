@@ -5,7 +5,7 @@ Require=mosquitto.service
 
 [Service]
 EnvironmentFile=-/etc/default/mqtt-to-prometheus
-ExecStart=/usr/lib/nerdhome/.env/bin/python3 /usr/lib/nerdhome/mqtt-to-prometheus.py -m $MQTT_BROKER -p $PORT
+ExecStart=/usr/lib/nerdhome/.env/bin/python3 /usr/lib/nerdhome/mqtt-to-prometheus.py
 Restart=always
 RestartSec=5
 KillMode=process

@@ -19,9 +19,19 @@ for M in Nerdman Doorbell Adafruit_TSL2561; do
     chown -R root:root /usr/lib/nerdhome/${M}
 done
 
-if [ ! -f /etc/default/${SERVICE} ]; then
-    cp ${CWD}/${SERVICE}.default /etc/default/${SERVICE}
+if [ -f ${CWD}/${SERVICE}.default ]; then
+    if [ ! -f /etc/default/${SERVICE} ]; then
+        cp ${CWD}/${SERVICE}.default /etc/default/${SERVICE}
+    fi
 fi
+
+mkdir -p /etc/nerdhome
+for SRC in ${CWD}/../${SERVICE}.*.dist; do
+    DEST=$(echo ${SRC} | sed -e "s/\.dist$//")
+    if [ ! -f ${DEST} ]; then
+        cp ${SRC} ${DEST}
+    fi
+done
 
 cp ${CWD}/${SERVICE}.service /etc/systemd/system/${SERVICE}.service
 systemctl daemon-reload

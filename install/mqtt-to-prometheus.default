@@ -1,3 +1,0 @@
-# Default options for mqtt-to-prometheus
-MQTT_BROKER="localhost"
-PORT="8000"
