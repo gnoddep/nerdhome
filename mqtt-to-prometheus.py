@@ -3,7 +3,7 @@
 from argparse import ArgumentParser
 import json
 from paho.mqtt.client import topic_matches_sub, Client as MqttClient
-from prometheus_client import start_http_server, Counter, Gauge
+from prometheus_client import start_http_server, Gauge
 import re
 import signal
 import sys
@@ -21,9 +21,9 @@ METRICS = {
     'temperature': Gauge('temperature', 'Temperature', ['topic'], unit='celsius'),
     'illuminance': Gauge('illuminance_raw', 'Illuminance', ['topic']),
     'lux': Gauge('lux', 'Lux', ['topic']),
-    'kwh': Counter('kwh', 'Electricity usage', ['topic', 'tariff'], unit='kWh'),
+    'kwh': Gauge('kwh', 'Electricity usage', ['topic', 'tariff'], unit='kWh'),
     'current': Gauge('current', 'Current amperes', ['topic'], unit='A'),
-    'gas': Counter('gas', 'Gas usage', ['topic'], unit='m3'),
+    'gas': Gauge('gas', 'Gas usage', ['topic'], unit='m3'),
 }
 SERVICE_SUBSCRIPTION = 'service/#'
 SERVICE_REGEX = re.compile('^service/')
