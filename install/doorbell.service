@@ -1,11 +1,11 @@
 [Unit]
-Description=Nerdhome
+Description=Doorbell
 After=network.target
 
 [Service]
-ExecStart=/usr/lib/nerdhome/.env/bin/python3 /usr/lib/nerdhome/nerdhome.py
+ExecStart=/usr/lib/nerdhome/.env/bin/python3 /usr/lib/nerdhome/doorbell.py
 Restart=always
-RestartSec=10
+RestartSec=5
 KillMode=process
 Type=simple
 

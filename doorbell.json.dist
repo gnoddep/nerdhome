@@ -1,0 +1,15 @@
+{
+  "mqtt": {
+    "hostname": "localhost"
+  },
+  "doorbells": {
+    "intercom": {
+      "button_gpio": 18,
+      "relay_gpio": 40
+    },
+    "door": {
+      "button_gpio": 15,
+      "relay_gpio": 38
+    }
+  }
+}
