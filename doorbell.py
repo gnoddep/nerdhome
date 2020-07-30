@@ -67,18 +67,15 @@ class Application(object):
         except KeyboardInterrupt:
             pass
         finally:
-            self.__doorbell.stop()
-            self.__doorbell.join()
+            if self.__doorbell is not None:
+                self.__doorbell.stop()
+                self.__doorbell.join()
 
             self.__mqtt.publish('service/doorbell', 0, qos=1, retain=True)
             self.__mqtt.loop_stop()
             self.__mqtt.disconnect()
 
-    def cleanup(self):
-        if not self.__doorbell is None:
-            self.__doorbell.stop()
-        self.__mqtt.publish('service/doorbell', 0, qos=1, retain=True)
-        GPIO.cleanup()
+            GPIO.cleanup()
 
     def _handle_doorbell(self, button):
         timestamp = time()

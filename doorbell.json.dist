@@ -1,6 +1,6 @@
 {
   "mqtt": {
-    "hostname": "localhost"
+    "host": "localhost"
   },
   "doorbells": {
     "intercom": {
