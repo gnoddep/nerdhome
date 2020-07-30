@@ -97,14 +97,14 @@ class MqttToPrometheus(object):
             client.subscribe(subscription, qos=0)
 
     def _mqtt_handle_topic(self, client, userdata, message):
+        payload = message.payload
+        if payload is not None:
+            payload = payload.decode('utf-8')
+
         if self.__verbose:
-            print('MQTT message: ', message.topic, message.payload.decode('utf-8'))
+            print('MQTT message: ', message.topic, payload)
 
         for subscription, fields in self.__config.get('topics', {}).items():
-            payload = message.payload
-            if payload is not None:
-                payload = payload.decode('utf-8')
-
             if SERVICE_REGEX.match(message.topic):
                 metric = SERVICE_METRIC.labels(topic=message.topic)
                 metric.set(self.__payload_to_metric_value(payload))
