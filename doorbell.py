@@ -56,6 +56,15 @@ class Application(object):
                     print('Adding doorbell', doorbell, ':', config)
 
                 button = LedButton(config['button_gpio'], config['relay_gpio'], name=doorbell)
+
+                state = 'on' if button.button_state() == LedButton.PRESSED else 'off'
+                self.__mqtt.publish(
+                    'doorbell/' + button.name(),
+                    json.dumps({'state': state, 'timestamp': time()}),
+                    qos=1,
+                    retain=True
+                )
+
                 button.on_changed(self._handle_doorbell)
                 self.__doorbells.append(button)
 
@@ -79,7 +88,7 @@ class Application(object):
 
     def _handle_doorbell(self, button):
         timestamp = time()
-        state = 'ON' if button.button_state() == LedButton.PRESSED else 'OFF'
+        state = 'on' if button.button_state() == LedButton.PRESSED else 'off'
         self.__mqtt.publish(
             'doorbell/' + button.name(),
             json.dumps({'state': state, 'timestamp': timestamp}),
