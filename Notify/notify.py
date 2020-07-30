@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from datetime import datetime, timezone
+from datetime import datetime
 from dateutil import tz
 import gi
 import json
@@ -15,7 +15,7 @@ gi.require_version('Gtk', '3.0')
 gi.require_version('GSound', '1.0')
 gi.require_version('Notify', '0.7')
 
-from gi.repository import AppIndicator3, GdkPixbuf, Gtk, GSound, Notify
+from gi.repository import AppIndicator3, Gtk, GSound, Notify
 
 APP_NAME = 'Nerdhome'
 
