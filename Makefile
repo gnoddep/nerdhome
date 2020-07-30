@@ -4,7 +4,7 @@ install-slimme-meter:
 	sudo ./install/install.sh slimme-meter
 
 install-nerdhome:
-	sudo ./install/install.sh nerdhome
+	sudo ./install/install.sh Nerdhome
 
 install-mqtt-to-influxdb:
 	sudo ./install/install.sh mqtt-to-influxdb
