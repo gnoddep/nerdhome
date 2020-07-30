@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
-from argparse import ArgumentParser, FileType
+from argparse import ArgumentParser
 from importlib import import_module
-import json
 import signal
 from threading import Event
 
@@ -20,7 +19,7 @@ class Nerdhome:
     def __init__(self):
         signal.signal(signal.SIGINT, self.__signal_handler)
         self.__mqtt = None
-        self.__infuxdb = None
+        self.__influxdb = None
 
     def run(self):
         try:

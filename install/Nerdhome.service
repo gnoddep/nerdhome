@@ -3,7 +3,7 @@ Description=Nerdhome
 After=network.target
 
 [Service]
-ExecStart=/usr/lib/nerdhome/.env/bin/python3 /usr/lib/nerdhome/Nerdhome.py
+ExecStart=/usr/lib/nerdhome/.env/bin/python3 /usr/lib/nerdhome/nerdhome.py
 Restart=always
 RestartSec=10
 KillMode=process
