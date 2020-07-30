@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from time import time
 
 import RPi.GPIO as GPIO
@@ -45,8 +46,13 @@ class Application(Nerdhome.Application):
 
     def _handle_doorbell(self, button):
         timestamp = time()
-        state = button.button_state()
-        self.mqtt.publish('doorbell/' + button.name(), str(state) + ':' + str(timestamp), qos=0)
+        state = 'ON' if button.button_state() == LedButton.PRESSED else 'OFF'
+        self.mqtt.publish(
+            'doorbell/' + button.name(),
+            json.dumps({'state': state, 'timestamp': timestamp}),
+            qos=1,
+            retain=True
+        )
 
         if state:
             self.doorbell.ring(button, 1 if button.name() == 'door' else 3)
