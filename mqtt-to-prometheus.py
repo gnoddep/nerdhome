@@ -21,6 +21,9 @@ METRICS = {
     'temperature': Gauge('temperature', 'Temperature', ['topic'], unit='celsius'),
     'illuminance': Gauge('illuminance_raw', 'Illuminance', ['topic']),
     'lux': Gauge('lux', 'Lux', ['topic']),
+    'kwh': Gauge('kwh', 'Electricity usage', ['topic', 'tariff'], unit='kWh'),
+    'current': Gauge('current', 'Current amperes', ['topic'], unit='A'),
+    'gas': Gauge('gas', 'Gas usage', ['topic'], unit='m3'),
 }
 SERVICE_SUBSCRIPTION = 'service/#'
 SERVICE_REGEX = re.compile('^service/')
@@ -116,7 +119,14 @@ class MqttToPrometheus(object):
 
                 for field, metric_label in fields.items():
                     if field in data:
-                        metric = METRICS[metric_label].labels(topic=message.topic)
+                        labels = {}
+                        for expected_label in METRICS[metric_label]._labelnames:
+                            if expected_label == 'topic':
+                                labels['topic'] = message.topic
+                            elif expected_label in data:
+                                labels[expected_label] = data.get(expected_label, None)
+
+                        metric = METRICS[metric_label].labels(**labels)
 
                         if isinstance(metric, State):
                             metric.set(self.__payload_to_metric_value(data[field]))

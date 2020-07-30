@@ -6,6 +6,16 @@
     "port": 8000
   },
   "topics": {
+    "doorbell/+": {
+      "state": "state"
+    },
+    "smartmeter": {
+      "kwh_produced": "kwh",
+      "kwh_consumed": "kwh",
+      "current_produced": "current",
+      "current_consumed": "current",
+      "gas_produced": "gas"
+    },
     "zigbee2mqtt/+/lighting/#": {
       "linkquality": "linkquality",
       "state": "state"
