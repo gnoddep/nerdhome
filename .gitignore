@@ -2,6 +2,7 @@
 doorbell.json
 mqtt-to-hue.json
 mqtt-to-prometheus.json
+smartmeter.json
 
 # Dev environment
 .venv/**

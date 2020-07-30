@@ -1,0 +1,13 @@
+[Unit]
+Description=Smart Meter
+After=network.target
+
+[Service]
+ExecStart=/usr/lib/nerdhome/.env/bin/python3 /usr/lib/nerdhome/smartmeter.py
+Restart=always
+RestartSec=5
+KillMode=process
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
