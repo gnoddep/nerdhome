@@ -18,6 +18,7 @@ gi.require_version('Notify', '0.7')
 from gi.repository import AppIndicator3, Gtk, GSound, Notify
 
 APP_NAME = 'Nerdhome'
+WERKKAMER_LIGHTING_MAIN_TOPIC = 'zigbee2mqtt/werkkamer/lighting/main'
 
 
 class NerdhomeNotify(object):
@@ -38,9 +39,9 @@ class NerdhomeNotify(object):
         self.__status_item = Gtk.MenuItem(label='Not connected')
         self.__status_item.set_sensitive(False)
 
-        self.__lights_werkkamer_state = None
-        self.__lights_werkkamer = Gtk.MenuItem(label='Lights Werkkamer (?)')
-        self.__lights_werkkamer.connect('activate', self.toggle_lights_werkkamer)
+        self.__werkkamer_lighting_state = None
+        self.__werkkamer_lighting = Gtk.MenuItem(label='Lights Werkkamer (?)')
+        self.__werkkamer_lighting.connect('activate', self.toggle_lights_werkkamer)
 
         self.__gsound = GSound.Context()
 
@@ -52,7 +53,7 @@ class NerdhomeNotify(object):
         menu.append(self.__status_item)
         menu.append(Gtk.SeparatorMenuItem())
 
-        menu.append(self.__lights_werkkamer)
+        menu.append(self.__werkkamer_lighting)
         menu.append(Gtk.SeparatorMenuItem())
 
         item_quit = Gtk.MenuItem(label='Quit')
@@ -83,8 +84,8 @@ class NerdhomeNotify(object):
         self.__status_item.set_sensitive(True)
         client.subscribe('doorbell/+', qos=0)
 
-        client.subscribe('zigbee2mqtt/lights_werkkamer', qos=0)
-        client.publish('zigbee2mqtt/lights_werkkamer/get')
+        client.subscribe(WERKKAMER_LIGHTING_MAIN_TOPIC, qos=0)
+        client.publish(WERKKAMER_LIGHTING_MAIN_TOPIC + '/get')
 
     def __mqtt_on_disconnect(self, *args, **kwargs):
         self.__status_item.set_label(f'Not connected')
@@ -114,18 +115,18 @@ class NerdhomeNotify(object):
     def __mqtt_handle_lights_werkkamer(self, client, userdata, message):
         message = json.loads(message.payload.decode('utf-8'))
 
-        self.__lights_werkkamer_state = message['state']
+        self.__werkkamer_lighting_state = message['state']
 
         if message['state'] == 'ON':
-            self.__lights_werkkamer.set_label('Lights Werkkamer (ON)')
+            self.__werkkamer_lighting.set_label('Werkkamer Lighting (ON)')
         else:
-            self.__lights_werkkamer.set_label('Lights Werkkamer (OFF)')
+            self.__werkkamer_lighting.set_label('Werkkamer Lighting (OFF)')
 
     def toggle_lights_werkkamer(self, *args, **kwargs):
-        if self.__lights_werkkamer_state == 'ON':
-            self.__mqtt.publish('zigbee2mqtt/lights_werkkamer/set/state', 'OFF')
-        elif self.__lights_werkkamer_state == 'OFF':
-            self.__mqtt.publish('zigbee2mqtt/lights_werkkamer/set/state', 'ON')
+        if self.__werkkamer_lighting_state == 'ON':
+            self.__mqtt.publish(WERKKAMER_LIGHTING_MAIN_TOPIC + '/set/state', 'OFF')
+        elif self.__werkkamer_lighting_state == 'OFF':
+            self.__mqtt.publish(WERKKAMER_LIGHTING_MAIN_TOPIC + '/set/state', 'ON')
 
     def quit(self, *args, **kwargs):
         Notify.uninit()
@@ -139,7 +140,7 @@ class NerdhomeNotify(object):
         self.__mqtt.on_connect = self.__mqtt_on_connect
         self.__mqtt.on_disconnect = self.__mqtt_on_disconnect
         self.__mqtt.message_callback_add('doorbell/+', self.__mqtt_handle_doorbell)
-        self.__mqtt.message_callback_add('zigbee2mqtt/lights_werkkamer', self.__mqtt_handle_lights_werkkamer)
+        self.__mqtt.message_callback_add(WERKKAMER_LIGHTING_MAIN_TOPIC, self.__mqtt_handle_lights_werkkamer)
         self.__mqtt.connect(self.__configuration['mqtt']['hostname'])
         self.__mqtt.loop_start()
 
