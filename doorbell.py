@@ -47,6 +47,7 @@ class Application(object):
             )
 
             self.__mqtt.on_connect = self.__mqtt_on_connect
+            self.__mqtt.loop_start()
 
             GPIO.setmode(GPIO.BOARD)
 
