@@ -91,10 +91,13 @@ class MqttToPrometheus(object):
         if self.__verbose:
             print('MQTT message: ', message.topic, message.payload.decode('utf-8'))
 
-        data = json.loads(message.payload.decode('utf-8'))
-
         for subscription, fields in self.__config.get('topics', {}).items():
             if topic_matches_sub(subscription, message.topic):
+                try:
+                    data = json.loads(message.payload.decode('utf-8'))
+                except json.JSONDecodeError:
+                    return
+
                 for field, metric_label in fields.items():
                     if field in data:
                         metric = METRICS[metric_label].labels(topic=message.topic)
@@ -103,6 +106,8 @@ class MqttToPrometheus(object):
                             metric.set(0 if str(data[field]).lower() in ['0', 'null', 'false', 'off', 'no'] else 1)
                         elif isinstance(metric, Gauge):
                             metric.set(data[field])
+
+                return
 
     def __signal_handler(self, signal, frame):
         self.__wait_mutex.set()
