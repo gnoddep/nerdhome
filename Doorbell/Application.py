@@ -61,5 +61,7 @@ class Application(Nerdhome.Application):
             )
 
     def on_mqtt_connect(self, client, userdata, flags, rc):
+        if self.verbose:
+            print('Registering doorbell service')
         client.will_set('service/doorbell', 0, qos=1, retain=True)
         client.publish('service/doorbell', 1, qos=1, retain=True)

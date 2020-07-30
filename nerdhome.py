@@ -93,15 +93,23 @@ class Nerdhome:
 
                 if alive_count == 0:
                     raise RuntimeError('No active applications anymore')
+
+            if self.__verbose:
+                print('Exiting')
+
         except KeyboardInterrupt:
             if self.__verbose:
                 print('Ctrl-C is hit')
             self.__exit.set()
         finally:
             for name, application in self.__applications.items():
+                if self.__verbose:
+                    print('Stopping application', name)
                 application.stop()
 
             for name, application in self.__applications.items():
+                if self.__verbose > 2:
+                    print('Joining application', name)
                 application.join()
 
             if self.__influxdb is not None:
@@ -121,7 +129,7 @@ class Nerdhome:
 
     def __on_mqtt_connect(self, client, userdata, flags, rc):
         if self.__verbose:
-            print('Connected to MQTT:', str(rc))
+            print('Connected to MQTT')
 
         for name, application in self.__applications.items():
             application.on_mqtt_connect(client, userdata, flags, rc)
