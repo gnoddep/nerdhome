@@ -1,2 +1,6 @@
+# Configuration
+mqtt-to-prometheus.json
+
+# Dev environment
 .venv/**
 *.pyc

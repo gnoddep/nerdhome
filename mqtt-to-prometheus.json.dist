@@ -1,0 +1,23 @@
+{
+  "mqtt": {
+    "host": "localhost",
+    "port": 8000
+  },
+  "prometheus-exporter": {
+    "port": 8000
+  },
+  "topics": {
+    "zigbee2mqtt/+/lighting/#": {
+      "linkquality": "linkquality",
+      "state": "state"
+    },
+    "zigbee2mqtt/+/motionsensor/#": {
+      "battery": "battery",
+      "linkquality": "linkquality",
+      "occupancy": "state",
+      "temperature": "temperature",
+      "illuminance": "illuminance",
+      "illuminance_lux": "lux"
+    }
+  }
+}
