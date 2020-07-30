@@ -19,12 +19,9 @@ class Application(Nerdhome.Application):
     def __init__(self, *args, **kwargs):
         super(Application, self).__init__(*args, **kwargs)
         self.doorbell = None
-        self.verbose = False
         self.__doorbells = []
 
     def initialize(self):
-        self.verbose = self.configuration.get('verbose', default=False)
-
         GPIO.setmode(GPIO.BOARD)
 
         for doorbell, config in self.configuration.get('doorbells', default={}):

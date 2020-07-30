@@ -18,6 +18,7 @@ class Nerdhome:
 
     def __init__(self):
         signal.signal(signal.SIGINT, self.__signal_handler)
+        self.__verbose = 0
         self.__mqtt = None
         self.__influxdb = None
 
@@ -41,7 +42,7 @@ class Nerdhome:
 
             args = parser.parse_args()
 
-            verbose = min(3, args.verbose)
+            self.__verbose = min(3, args.verbose)
             configuration = Configuration(args.configuration)
 
             # Initialize the threads
@@ -61,7 +62,8 @@ class Nerdhome:
                     configuration=Configuration(configuration=config),
                     mqtt=self.__mqtt,
                     influxdb=self.__influxdb,
-                    name=application
+                    name=application,
+                    verbose=self.__verbose
                 )
 
                 if not isinstance(self.__applications[application], Application):
@@ -86,12 +88,14 @@ class Nerdhome:
                 alive_count = 0
                 for name, application in self.__applications.items():
                     if not application.is_alive():
-                        if verbose:
+                        if self.__verbose:
                             print('Application', name, 'is not alive anymore')
 
                 if alive_count == 0:
                     raise RuntimeError('No active applications anymore')
         except KeyboardInterrupt:
+            if self.__verbose:
+                print('Ctrl-C is hit')
             self.__exit.set()
         finally:
             for name, application in self.__applications.items():
@@ -111,10 +115,12 @@ class Nerdhome:
             pass
 
     def __signal_handler(self, signum, frame):
+        if self.__verbose:
+            print('Caught signal', signum)
         self.__exit.set()
 
     def __on_mqtt_connect(self, client, userdata, flags, rc):
-        if self.verbose:
+        if self.__verbose:
             print('Connected to MQTT:', str(rc))
 
         for name, application in self.__applications.items():

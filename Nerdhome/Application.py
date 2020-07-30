@@ -2,13 +2,14 @@ import threading
 
 
 class Application(threading.Thread):
-    def __init__(self, configuration={}, mqtt=None, influxdb=None, loop_interval=None, *args, **kwargs):
+    def __init__(self, configuration={}, verbose=0, mqtt=None, influxdb=None, loop_interval=None, *args, **kwargs):
         super(Application, self).__init__(*args, **kwargs)
 
         self.__exit = threading.Event()
         self.__loop_interval = loop_interval
 
         self.configuration = configuration
+        self.verbose = verbose
         self.mqtt = mqtt
         self.influxdb = influxdb
 
