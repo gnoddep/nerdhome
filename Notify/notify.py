@@ -92,14 +92,14 @@ class NerdhomeNotify(object):
         self.__status_item.set_sensitive(False)
 
     def __mqtt_handle_doorbell(self, client, userdata, message):
+        data = json.loads(message.payload.decode('utf-8'))
         name = NerdhomeNotify.doorbell_re.match(message.topic).group('name')
-        match = NerdhomeNotify.doorbell_state_re.match(message.payload.decode('utf-8'))
 
-        state = int(match.group('state'))
-        utc = datetime.utcfromtimestamp(float(match.group('timestamp'))).replace(tzinfo=tz.tzutc())
+        state = data['state'].lower() == 'on'
+        utc = datetime.utcfromtimestamp(data['timestamp']).replace(tzinfo=tz.tzutc())
         timestamp = utc.astimezone(tz.tzlocal())
 
-        if state == 1:
+        if state:
             self.notification(
                 '**tring** **tring** **TRING**',
                 f'The {name} doorbell is ringing! ({timestamp})',
@@ -114,18 +114,13 @@ class NerdhomeNotify(object):
 
     def __mqtt_handle_lights_werkkamer(self, client, userdata, message):
         message = json.loads(message.payload.decode('utf-8'))
-
-        self.__werkkamer_lighting_state = message['state']
-
-        if message['state'] == 'ON':
-            self.__werkkamer_lighting.set_label('Werkkamer Lighting (ON)')
-        else:
-            self.__werkkamer_lighting.set_label('Werkkamer Lighting (OFF)')
+        self.__werkkamer_lighting_state = message['state'].lower()
+        self.__werkkamer_lighting.set_label('Werkkamer Lighting (' + self.__werkkamer_lighting_state + ')')
 
     def toggle_lights_werkkamer(self, *args, **kwargs):
-        if self.__werkkamer_lighting_state == 'ON':
+        if self.__werkkamer_lighting_state == 'on':
             self.__mqtt.publish(WERKKAMER_LIGHTING_MAIN_TOPIC + '/set/state', 'OFF')
-        elif self.__werkkamer_lighting_state == 'OFF':
+        elif self.__werkkamer_lighting_state == 'off':
             self.__mqtt.publish(WERKKAMER_LIGHTING_MAIN_TOPIC + '/set/state', 'ON')
 
     def quit(self, *args, **kwargs):
