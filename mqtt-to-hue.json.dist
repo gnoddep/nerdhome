@@ -3,7 +3,8 @@
     "host": "localhost"
   },
   "hue": {
-    "host": "127.0.0.1"
+    "host": "127.0.0.1",
+    "api_key_file": "/etc/nerdhome/mqtt-to-hue.apikey"
   },
   "mapping": {
     "zigbee2mqtt/slaapkamer/switch": "Slaapkamer"

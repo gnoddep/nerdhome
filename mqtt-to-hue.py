@@ -2,7 +2,7 @@
 
 from argparse import ArgumentParser
 import json
-from paho.mqtt.client import topic_matches_sub, Client as MqttClient
+from paho.mqtt.client import Client as MqttClient
 from phue import Bridge
 import signal
 import sys
@@ -37,7 +37,10 @@ class MqttToHue(object):
             with open(argv.config) as fd:
                 self.__config = json.load(fd)
 
-            self.__bridge = Bridge(self.__config.get('hue', {}).get('host'))
+            self.__bridge = Bridge(
+                self.__config.get('hue', {}).get('host'),
+                config_file_path=self.__config.get('hue', {}).get('api_key_file', None)
+            )
             self.__bridge.connect()
 
             self.__bridge.set_light('Slaapkamer', 'on', True)
