@@ -25,13 +25,15 @@ class Nerdhome:
         try:
             parser = ArgumentParser()
             parser.add_argument(
-                '-c', '--configuration',
-                required=True,
+                '-c',
+                '--configuration',
+                action='store',
                 default='/etc/nerdhome/nerdhome.json',
                 help='Path to the configuration file'
             )
             parser.add_argument(
-                '-v', '--verbose',
+                '-v',
+                '--verbose',
                 action='count',
                 default=0,
                 help='Set verbosity level, can be used multiple times'
@@ -58,7 +60,7 @@ class Nerdhome:
                 self.__applications[application] = import_module(application).Application(
                     configuration=Configuration(configuration=config),
                     mqtt=self.__mqtt,
-                    infuxdb=self.__influxdb,
+                    influxdb=self.__influxdb,
                     name=application
                 )
 
