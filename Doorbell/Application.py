@@ -20,23 +20,23 @@ class Application(Nerdhome.Application):
         super(Application, self).__init__(*args, **kwargs)
         self.doorbell = None
         self.verbose = False
+        self.__doorbells = []
 
     def initialize(self):
         self.verbose = self.configuration.get('verbose', default=False)
 
         GPIO.setmode(GPIO.BOARD)
 
-        door = LedButton(self.DOOR_BUTTON, self.DOOR_RELAY, name='door')
-        door.on_changed(self._handle_doorbell)
+        for doorbell, config in self.configuration.get('doorbells', default={}):
+            if self.verbose:
+                print('Adding doorbell', doorbell, ':', config)
 
-        intercom = LedButton(self.INTERCOM_BUTTON, self.INTERCOM_RELAY, name='intercom')
-        intercom.on_changed(self._handle_doorbell)
+            button = LedButton(config['button_gpio'], config['relay_gpio'], name=doorbell)
+            button.on_changed(self._handle_doorbell)
+            self.__doorbells.append(button)
 
         self.doorbell = Doorbell(self.verbose)
         self.doorbell.start()
-
-        if self.verbose:
-            print("Press CTRL+C to exit")
 
     def cleanup(self):
         if not self.doorbell is None:
@@ -60,12 +60,9 @@ class Application(Nerdhome.Application):
         if self.verbose:
             print(
                 datetime.fromtimestamp(timestamp).strftime('%Y-%m-%dT%H:%M:%S.%f'),
-                'The', button.name(), 'doorbell is', 'pressed' if state else 'released'
+                'The', button.name(), 'doorbell is', 'pressed' if state == 'ON' else 'released'
             )
 
     def on_mqtt_connect(self, client, userdata, flags, rc):
-        if self.verbose:
-            print('Connected to MQTT:', str(rc))
-
         client.will_set('service/doorbell', 0, qos=1, retain=True)
         client.publish('service/doorbell', 1, qos=1, retain=True)

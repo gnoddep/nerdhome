@@ -1,2 +1,0 @@
-# Default options for doorbell
-MQTT_BROKER="localhost"

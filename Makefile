@@ -1,11 +1,10 @@
-.PHONY: install-slimme-meter install-doorbell install-mqtt-to-influxdb \
-		install-mqtt-to-prometheus
+.PHONY: install-slimme-meter install-nerdhome install-mqtt-to-influxdb install-mqtt-to-prometheus install-mqtt-to-hue
 
 install-slimme-meter:
 	sudo ./install/install.sh slimme-meter
 
-install-doorbell:
-	sudo ./install/install.sh doorbell
+install-nerdhome:
+    sudo ./install/install.sh nerdhome
 
 install-mqtt-to-influxdb:
 	sudo ./install/install.sh mqtt-to-influxdb

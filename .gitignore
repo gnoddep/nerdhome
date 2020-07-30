@@ -1,6 +1,7 @@
 # Configuration
 mqtt-to-hue.json
 mqtt-to-prometheus.json
+nerdhome.json
 
 # Dev environment
 .venv/**

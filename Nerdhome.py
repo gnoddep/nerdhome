@@ -28,6 +28,7 @@ class Nerdhome:
             parser.add_argument(
                 '-c', '--configuration',
                 required=True,
+                default='/etc/nerdhome/nerdhome.json',
                 help='Path to the configuration file'
             )
             parser.add_argument(
@@ -67,7 +68,7 @@ class Nerdhome:
 
             # Start the threads
             if self.__mqtt is not None:
-                self.__mqtt.connect(mqtt['hostname'])
+                self.__mqtt.connect(mqtt.get('hostname', 'localhost'), port=mqtt.get('port', 1883))
                 self.__mqtt.loop_start()
 
             if self.__influxdb is not None:
@@ -112,6 +113,9 @@ class Nerdhome:
         self.__exit.set()
 
     def __on_mqtt_connect(self, client, userdata, flags, rc):
+        if self.verbose:
+            print('Connected to MQTT:', str(rc))
+
         for name, application in self.__applications.items():
             application.on_mqtt_connect(client, userdata, flags, rc)
 
