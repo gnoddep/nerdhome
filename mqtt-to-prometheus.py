@@ -22,6 +22,7 @@ METRICS = {
     'illuminance': Gauge('illuminance_raw', 'Illuminance', ['topic']),
     'lux': Gauge('lux', 'Lux', ['topic']),
 }
+SERVICE_SUBSCRIPTION = 'service/#'
 SERVICE_REGEX = re.compile('^service/')
 SERVICE_METRIC = Gauge('service', 'State of the service', ['topic'])
 
@@ -60,8 +61,9 @@ class MqttToPrometheus(object):
 
             self.__mqtt.on_connect = self.__mqtt_on_connect
 
-            for topic in self.__config.get('topics', {}).keys():
-                self.__mqtt.message_callback_add(topic, self._mqtt_handle_topic)
+            self.__mqtt.message_callback_add(SERVICE_SUBSCRIPTION, self._mqtt_handle_topic)
+            for subscription in self.__config.get('topics', {}).keys():
+                self.__mqtt.message_callback_add(subscription, self._mqtt_handle_topic)
 
             self.__mqtt.loop_start()
 
