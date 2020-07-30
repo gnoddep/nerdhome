@@ -1,0 +1,11 @@
+{
+  "mqtt": {
+    "host": "localhost"
+  },
+  "hue": {
+    "host": "127.0.0.1"
+  },
+  "mapping": {
+    "zigbee2mqtt/slaapkamer/switch": "Slaapkamer"
+  }
+}

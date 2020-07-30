@@ -9,3 +9,4 @@ PyGObject==3.36
 smeterd==2.7.3
 influxdb==5.0.0
 zeroconf==0.24.5
+phue==1.1

@@ -1,10 +1,10 @@
 [Unit]
-Description=MQTT to Prometheus
+Description=MQTT to Philips Hue
 After=network.target mosquitto.service
 Require=mosquitto.service
 
 [Service]
-ExecStart=/usr/lib/nerdhome/.env/bin/python3 /usr/lib/nerdhome/mqtt-to-prometheus.py
+ExecStart=/usr/lib/nerdhome/.env/bin/python3 /usr/lib/nerdhome/mqtt-to-hue.py
 Restart=always
 RestartSec=5
 KillMode=process

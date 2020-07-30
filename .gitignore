@@ -1,4 +1,5 @@
 # Configuration
+mqtt-to-hue.json
 mqtt-to-prometheus.json
 
 # Dev environment
