@@ -87,6 +87,10 @@ class MqttToPrometheus(object):
         client.will_set('service/mqtt-to-prometheus', 0, qos=1, retain=True)
         client.publish('service/mqtt-to-prometheus', 1, qos=1, retain=True)
 
+        if self.__verbose:
+            print('MQTT subscribed to', SERVICE_SUBSCRIPTION)
+        client.subscribe(SERVICE_SUBSCRIPTION, qos=0)
+
         for subscription in self.__config.get('topics', {}).keys():
             if self.__verbose:
                 print('MQTT subscribed to', subscription)
