@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 import json
 from paho.mqtt.client import topic_matches_sub, Client as MqttClient
 from prometheus_client import start_http_server, Gauge
+import re
 import signal
 import sys
 import threading
@@ -21,6 +22,8 @@ METRICS = {
     'illuminance': Gauge('illuminance_raw', 'Illuminance', ['topic']),
     'lux': Gauge('lux', 'Lux', ['topic']),
 }
+SERVICE_REGEX = re.compile('^service/')
+SERVICE_METRIC = Gauge('service', 'State of the service', ['topic'])
 
 
 class MqttToPrometheus(object):
@@ -92,9 +95,16 @@ class MqttToPrometheus(object):
             print('MQTT message: ', message.topic, message.payload.decode('utf-8'))
 
         for subscription, fields in self.__config.get('topics', {}).items():
-            if topic_matches_sub(subscription, message.topic):
+            payload = message.payload
+            if payload is not None:
+                payload = payload.decode('utf-8')
+
+            if SERVICE_REGEX.match(message.topic):
+                metric = SERVICE_METRIC.labels(topic=message.topic)
+                metric.set(self.__payload_to_metric_value(payload))
+            elif topic_matches_sub(subscription, message.topic):
                 try:
-                    data = json.loads(message.payload.decode('utf-8'))
+                    data = json.loads(payload)
                 except json.JSONDecodeError:
                     return
 
@@ -103,11 +113,15 @@ class MqttToPrometheus(object):
                         metric = METRICS[metric_label].labels(topic=message.topic)
 
                         if isinstance(metric, State):
-                            metric.set(0 if str(data[field]).lower() in ['0', 'null', 'false', 'off', 'no'] else 1)
+                            metric.set(self.__payload_to_metric_value(data[field]))
                         elif isinstance(metric, Gauge):
                             metric.set(data[field])
 
                 return
+
+    @staticmethod
+    def __payload_to_metric_value(payload):
+        return 0 if str(payload).lower() in ['0', 'null', 'false', 'off', 'no'] else 1
 
     def __signal_handler(self, signal, frame):
         self.__wait_mutex.set()
