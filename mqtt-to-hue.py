@@ -40,8 +40,6 @@ class MqttToHue(object):
             self.__bridge = Bridge(self.__config.get('hue', {}).get('host'))
             self.__bridge.connect()
 
-            print(self.__bridge.lights)
-
             self.__bridge.set_light('Slaapkamer', 'on', True)
 
             self.__mqtt.connect(
@@ -87,6 +85,8 @@ class MqttToHue(object):
             try:
                 data = json.loads(message.payload.decode('utf-8'))
                 if 'click' in data:
+                    if self.__verbose:
+                        print('Turning', light, 'on' if data['click'] == 'on' else 'off')
                     self.__bridge.set_light(light, 'on', data['click'] == 'on')
             except json.JSONDecodeError:
                 pass
