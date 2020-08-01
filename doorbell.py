@@ -57,13 +57,12 @@ class Application(object):
 
                 button = LedButton(config['button_gpio'], config['relay_gpio'], name=doorbell)
 
-                state = 'on' if button.button_state() == LedButton.PRESSED else 'off'
-                self.__mqtt.publish(
-                    'doorbell/' + button.name(),
-                    json.dumps({'state': state, 'timestamp': time()}),
-                    qos=1,
-                    retain=True
-                )
+                if button.button_state() == LedButton.PRESSED:
+                    self.__mqtt.publish(
+                        'doorbell/' + button.name(),
+                        json.dumps({'state': 'on', 'timestamp': time()}),
+                        qos=1
+                    )
 
                 button.on_changed(self._handle_doorbell)
                 self.__doorbells.append(button)
@@ -89,20 +88,21 @@ class Application(object):
     def _handle_doorbell(self, button):
         timestamp = time()
         state = 'on' if button.button_state() == LedButton.PRESSED else 'off'
-        self.__mqtt.publish(
-            'doorbell/' + button.name(),
-            json.dumps({'state': state, 'timestamp': timestamp}),
-            qos=1,
-            retain=True
-        )
 
-        if state:
-            self.__doorbell.ring(button, 1 if button.name() == 'door' else 3)
+        if state == 'on':
+            self.__mqtt.publish(
+                'doorbell/' + button.name(),
+                json.dumps({'state': state, 'timestamp': timestamp}),
+                qos=1
+            )
+
+            rings = self.__config.get('doorbells', {}).get(button.name(), {}).get('rings', 1)
+            self.__doorbell.ring(button, rings)
 
         if self.__verbose:
             print(
                 datetime.fromtimestamp(timestamp).strftime('%Y-%m-%dT%H:%M:%S.%f'),
-                'The', button.name(), 'doorbell is', 'pressed' if state == 'ON' else 'released'
+                'The', button.name(), 'doorbell is', 'pressed' if state == 'on' else 'released'
             )
 
     def __mqtt_on_connect(self, client, userdata, flags, rc):

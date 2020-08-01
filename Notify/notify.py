@@ -23,7 +23,6 @@ WERKKAMER_LIGHTING_MAIN_TOPIC = 'zigbee2mqtt/werkkamer/lighting/main'
 
 class NerdhomeNotify(object):
     doorbell_re = re.compile(r'^doorbell/(?P<name>.+)$')
-    doorbell_state_re = re.compile(r'^(?P<state>[0-9]+):(?P<timestamp>[0-9.]+)$')
 
     def __init__(self):
         with open(self.__path('notify.json'), 'r') as fd:
@@ -92,7 +91,11 @@ class NerdhomeNotify(object):
         self.__status_item.set_sensitive(False)
 
     def __mqtt_handle_doorbell(self, client, userdata, message):
-        data = json.loads(message.payload.decode('utf-8'))
+        try:
+            data = json.loads(message.payload.decode('utf-8'))
+        except json.JSONDecodeError:
+            return
+
         name = NerdhomeNotify.doorbell_re.match(message.topic).group('name')
 
         state = data['state'].lower() == 'on'

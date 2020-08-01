@@ -7,7 +7,7 @@
   },
   "topics": {
     "doorbell/+": {
-      "state": "state"
+      "state": "event"
     },
     "smartmeter": {
       "kwh_produced": "kwh",

@@ -5,11 +5,13 @@
   "doorbells": {
     "intercom": {
       "button_gpio": 18,
-      "relay_gpio": 40
+      "relay_gpio": 40,
+      "rings": 3
     },
     "door": {
       "button_gpio": 15,
-      "relay_gpio": 38
+      "relay_gpio": 38,
+      "rings": 1
     }
   }
 }
