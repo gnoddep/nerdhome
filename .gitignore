@@ -6,4 +6,5 @@ smartmeter.json
 
 # Dev environment
 .venv/**
+.env/**
 *.pyc
